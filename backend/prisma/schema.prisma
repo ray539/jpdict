@@ -1,0 +1,130 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+
+model Word {
+  id String @id @default(uuid())
+  entrySeq String @unique
+  kanji String
+  kanjiOther Json
+  reading String
+  readingOther Json
+  definitions Json
+
+  exampleSentences ExampleSentence[]
+  belongsToWordDeck BelongsToWordDeck[]
+  inCard Card[]
+  knownByAccount WordKnownLevel[]
+
+  no_access1 SimilarWord[] @relation(name: "word1")
+  no_access2 SimilarWord[] @relation(name: "word2")
+}
+
+model ExampleSentence {
+  id String @id @default(uuid())
+  jpn String
+  eng String
+
+  // each example sentence must have a word associated with it
+  // this is called the 'default_vocab'
+  // user can query this database to find more sentences associated with their word
+  default_word_wordForm String
+  default_word Word @relation(fields: [default_wordId], references: [id])
+  default_wordId String
+}
+
+model Account {
+  id String @id @default(uuid())
+  username String
+  password String
+
+  targetWordDecks WordDeck[]
+  cards Card[]
+  knownWords WordKnownLevel[]
+
+  TDeckSelectionStrat DeckSelectionStrat @default(HIGHESTPRIO) // how target deck is selected
+  similarWordRels SimilarWord[]
+}
+
+enum DeckSelectionStrat {
+  HIGHESTPRIO
+  RANDOM
+}
+
+model WordDeck {
+  id String @id @default(uuid())
+  name String
+  account Account @relation(fields: [accountId], references: [id])
+  accountId String
+  words BelongsToWordDeck[]
+  priority Int
+}
+
+
+model BelongsToWordDeck {
+  word Word @relation(fields: [wordId], references: [id])
+  wordId String
+
+  wordDeck WordDeck @relation(fields: [wordDeckId], references: [id])
+  wordDeckId String
+  
+  seqNum Int
+  @@id([wordId, wordDeckId])
+}
+
+model WordKnownLevel {
+  account Account @relation(fields: [accountId], references: [id])
+  accountId String
+
+  word Word @relation(fields: [wordId], references: [id])
+  wordId String
+
+  knownLevel String // new, 0, 1, 2, 3, 4, 5
+  @@id([accountId, wordId])
+}
+
+// indicates that 2 words are similar (based on the account)
+// accessed manually in the prisma API.
+model SimilarWord {
+  account Account @relation(fields: [accountId], references: [id])
+  accountId String
+
+  word1 Word @relation(name: "word1", fields: [word1Id], references: [id])
+  word1Id String
+
+  word2 Word @relation(name: "word2", fields: [word2Id], references: [id])
+  word2Id String
+
+  @@id([accountId, word1Id, word2Id])
+}
+
+
+model Card {
+  id String @id @default(uuid())
+
+  account Account @relation(fields: [accountId], references: [id])
+  accountId String
+
+  word Word @relation(fields: [wordId], references: [id])
+  wordId String
+
+  // includes the cards example sentences and all that stuff
+  // can be different from that in the original word, because user may edit the card
+  cardData Json
+  knownLevel Int
+
+  lastReviewed DateTime
+  dateAdded DateTime
+}

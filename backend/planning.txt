@@ -1,0 +1,51 @@
+INFORMATION FORMAT
+
+ke_pri and re_pri fields:
+-gai1/gai2: common loan words
+-nf01: common, nf02 less common and so on
+
+entry:
+  ent_seq: id of element
+  // defining component of each entry
+  // kanji element, but also can be random symbols (eg. circle)
+  // there can be multiple kanji elements in an entry
+  k_ele: {
+    keb: kanji / katakana. may contain 々 (kurikaeshi)
+    ke_inf: information about the kanji element. eg. rarely used kanji form
+    ke_pri: see above
+  }
+  
+  r_ele: {
+    reb: reading of the element, in hiragana / katakana
+    re_nokanji: if this isactive, it means the kanji in the keb is not read as in the reading provided
+    re_inf: information about the reading (kinda useless)
+    re_restr: reading is only restricted to one of the keb elements
+  }
+  // a 'sense' is a definition of the word
+  // there can be multiple senses, and so they should be
+  // displayed on different lines, with each sense with each line
+  sense: {
+    stagk, stagr: eg. 遇う, sense restricted to that kanji or reading
+    pos: part of speech, eg. na adjective, no adjective etc.
+    field: eg. mathematics, physics
+    misc: information about the entry, eg. abbreviation
+    lsource: information about where loan word is from
+      lsource xml:lang="eng", in brackets: language loanword was from
+      lsource ls_type: full or part. if full, the whole word was loaned. Otherwise only half
+      lsource ls_wasei: this means that the meaning has changed a lot from the loan word
+    gloss: a definition
+      gloss g_type: more information about the gloss lit (literal) fig (figurative) expl (explanation)
+    s_inf: additional information about this sense, eg. maru: sometimes used with zero
+    xref: cross reference to entry with similar meaning
+           丸・まる・1
+           keb reb sense number
+           (should uniquely identify entry)
+    ant: antonym. Must match keb or reb in another entry
+    dial: dialect
+    // each sense may contain many examples
+    example: {
+      ex_text: form of the term in the example sentence (so can ctr + f to find it in the sentence)
+      ex_sent xml:lang="jpn": japanese sentence
+      ex_sent xml:lang="eng": english sentence
+    }
+  }

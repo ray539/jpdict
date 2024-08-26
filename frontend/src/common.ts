@@ -4,7 +4,6 @@ export enum DeckSelectionStrat {
   RANDOM
 }
 
-
 export interface Account {
   id: string;
   username: string;
@@ -12,6 +11,11 @@ export interface Account {
   TDeckSelectionStrat: DeckSelectionStrat;
 }
 
+export interface TDeckInfo {
+  name: string,
+  totalWords: number,
+  knownWords: number
+}
 
 export interface Login {
   username: string,

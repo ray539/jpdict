@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { Account } from '../common';
+import { Account, TDeckInfo } from '../common';
 
 export interface MyError {
   error: string
@@ -51,7 +51,17 @@ export async function login_service(username: string, password: string) {
 }
 
 export async function getTDeckListForUser_service(username: string, password: string) {
-  
+  try {
+    const res = await axios.get('/api/getTDeckListForUser', {
+      headers: {
+        username: username,
+        password: password
+      }
+    })
+    return res.data as TDeckInfo[];
+  } catch (e) {
+    return extractError(e)
+  }
 }
 
 export async function  changeWordKnownLevel_service(username: string, password: string) {

@@ -1,7 +1,8 @@
 import express from 'express'
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import 'express-async-errors'
 import morgan from 'morgan'
+import { increment_days, increment_hours, now_ } from './common';
 
 const prisma = new PrismaClient();
 const app = express()
@@ -81,6 +82,14 @@ app.post('/api/register', async (req, res) => {
   return res.json(newAccount);
 })
 
+/**
+ * returns:
+ * {
+ *  "name": string
+ *  "totalWords": Int
+ *  "knownWords": Int
+ * }
+ */
 app.get('/api/getTDeckListForUser', async(req, res) => {
   const username = req.headers.username as string
   const password = req.headers.password as string;
@@ -173,6 +182,111 @@ app.put('/api/changeWordKnownLevel', async (req, res) => {
     }
   })
   res.json(ret)
+})
+
+/**
+ * DEBUG
+ */
+app.post('/api/incrementDays', async(req, res) => {
+  increment_days(1)
+})
+
+app.post('/api/incrementHours', async (req, res) => {
+  increment_hours(1)
+})
+app.post('/api/deleteNewWords', async(req, res) => {
+  await prisma.newWordList.deleteMany()
+})
+
+
+app.get('/api/getNewWordsList', async (req, res) => {
+  const username = req.headers.username as string
+  const password = req.headers.password as string;
+  const foundAccnt = await loginAccount(username, password)
+  if (!foundAccnt) {
+    return res.status(403).json({error: 'invalid credentials'})
+  }
+
+  const strategy = req.body.strategy as string
+  const timestamp = req.body.timestamp as number
+  const now = new Date(timestamp)
+
+  // find the existing new word list entry
+  const newWordList = await prisma.newWordList.findUnique({where: {
+    accountId: foundAccnt.id
+  }})
+
+  const DAY_LENGTH = 24 * 3600 * 1000
+  const NUM_NEW_WORDS = 10
+
+  if (newWordList && now.getTime() - newWordList.date.getTime() <= DAY_LENGTH) {
+    console.log('return cached');
+    return res.json(newWordList.wordList)
+  }
+
+  // x is null, or it is too late
+  if (strategy == 'HIGHEST PRIO') {
+    console.log('get new list');
+    const deck = await prisma.wordDeck.findFirst({
+      where: {
+        priority: 1,
+        accountId: foundAccnt.id
+      }
+    })
+    if (!deck) {
+      return res.json({msg: 'no target decks found'})
+    }
+    const words_ = await prisma.belongsToWordDeck.findMany({
+      where: {
+        word: {
+          knownByAccount: {
+            none: {
+              accountId: foundAccnt.id
+            }
+          }
+        },
+        wordDeckId: deck.id
+      },
+      select: {
+        word: true
+      },
+      take: NUM_NEW_WORDS
+    })
+    const words = words_.map(w => w.word)
+    
+    await prisma.newWordList.deleteMany({
+      where: {
+        accountId: foundAccnt.id
+      }
+    })
+
+    await prisma.newWordList.create({
+      data: {
+        accountId: foundAccnt.id,        
+        date: now,
+        wordList: (words as Prisma.JsonArray)
+      }
+    })
+
+    res.json(words)
+  } else if (strategy == 'RANDOM') {
+    // const decks = await prisma.wordDeck.findMany({
+    //   where: {
+    //     accountId: foundAccnt.id
+    //   },
+    //   select: {
+    //     priority: true
+    //   }
+    // })
+    // const nums = decks.map(d => d.priority)
+    // if (nums.length == 0) {
+    //   res.json({msg: 'no target decks found'})
+    // }
+    // nums.sort()
+    res.status(403).json({error: 'TODO'})
+  } else {
+    return res.status(403).json({error: `strategy must be 'HIGHEST PRIO' or 'RANDOM'`})
+  }
 })
 
 const PORT = process.env.PORT || 3004

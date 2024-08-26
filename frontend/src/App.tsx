@@ -1,10 +1,10 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { useContext, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { Button } from 'react-bootstrap';
 import { Link, Route, Routes, useNavigate } from 'react-router-dom';
 import AuthContextProvider, { AuthContext } from './context/AuthContextProvider';
-import { Login } from './common';
-import { register_service } from './service/service';
+import { Login, TDeckInfo } from './common';
+import { getTDeckListForUser_service, register_service } from './service/service';
 
 function Links() {
   const authContext = useContext(AuthContext)
@@ -89,8 +89,6 @@ function LoginPage() {
         </>
       }
     </>
-
-
   )
 }
 
@@ -134,9 +132,21 @@ function Reigster() {
 
 function Dashboard_loggedIn() {
   const authContext = useContext(AuthContext)
-  authContext.account
-
+  const [tDeckInfo, setTDeckInfo] = useState<TDeckInfo[] | null>(null);
+  
   // get the decks for the user
+  useEffect(() => {
+    const todo = async () => {
+      const res = await getTDeckListForUser_service(authContext.account?.username as string, authContext.account?.password as string );
+      if ('error' in res) {
+        window.alert(res.error);
+        setTDeckInfo([])
+        return;
+      }
+      setTDeckInfo(res);
+    }
+    todo();
+  }, [])
 
   return (
     <>
@@ -149,12 +159,36 @@ function Dashboard_loggedIn() {
       </div>
       <div>you haven't completed your daily goal of 10 new words yet</div>
       <div>
-        <button>learn new words</button>
+        <Link to="/new-words">
+          <button>learn new words</button>
+        </Link>
+        
       </div>
       <div>
         <button>review due cads</button>
       </div>
       <h2>target word decks</h2>
+      {
+        tDeckInfo ?
+          tDeckInfo.length > 0 ?
+            tDeckInfo.map(tdeckInfo => {
+              return <div style={{border: '1px solid black'}}>
+                <div>
+                  name: {tdeckInfo.name}
+                </div>
+                <div>
+                  totalWords: {tdeckInfo.totalWords}
+                </div>
+                <div>
+                  knownWords: {tdeckInfo.knownWords}
+                </div>
+              </div>
+            })
+          :
+          <div>you have no target decks</div>
+        :
+          <div>fetching...</div>
+     }
     </>
   )
 }
@@ -163,10 +197,55 @@ function Dashboard() {
   const authContext = useContext(AuthContext)
 
   return (
-    authContext.account ? <Dashboard_loggedIn /> : <div>you must login to access the dashboard</div>
+    authContext.account ? <Dashboard_loggedIn /> : <div>you must login to access this feature</div>
   )
 }
 
+function NewWords_loggedIn() {
+  return (
+    <>
+      <h1>learn new words</h1>
+      <div style={{display: 'flex', height: '90vh', border: '1px solid red'}}>
+        <div style={{display: 'flex', alignItems: 'center', flexDirection: 'column', border: '1px solid black', minWidth: '5em', margin: '1em'}}>
+          <div style={{border: '1px solid black', paddingLeft: '0.5em', paddingRight: '0.5em', margin: '1em'}}>item1</div>
+        </div>
+
+        <div style={{border: '1px solid black', width: '100%', margin: '1em', padding: '1em'}}>
+          <div>create flashcard for</div>
+          <h1 style={{fontSize: 50}}>word</h1>
+          <div>reading: </div>
+          <div>other readings: </div>
+          <div>defnitions: </div>
+          <ol>
+            <li>def1</li>
+            <li>def2</li>
+            <li>def3</li>
+          </ol>
+          <h3>example sentences</h3>
+          <div>
+            <input type='checkbox'></input>
+            pick random sentence each time
+          </div>
+          <div>
+            <input type='checkbox'></input>
+            set fixed example sentence
+          </div>
+          <div style={{border: '1px solid black'}}>
+            <div style={{border: '1px solid black', paddingLeft: '0.5em', paddingRight: '0.5em', margin: '1em'}}>sentence 1</div>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
+
+
+function NewWords() {
+  const authContext = useContext(AuthContext);
+  return (
+    authContext.account ? <NewWords_loggedIn/> : <div>you must login to access this feature</div>
+  )
+}
 
 function App() {
   return (
@@ -179,6 +258,7 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<Reigster />} />
             <Route path="/dashboard" element={<Dashboard/>} />
+            <Route path="/new-words" element={<NewWords />} />
             <Route path="*" element={<div>not found</div>}/>
           </Routes>
         </>

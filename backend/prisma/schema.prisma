@@ -13,7 +13,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 model Word {
   id String @id @default(uuid())
   entrySeq String @unique
@@ -56,6 +55,8 @@ model Account {
 
   TDeckSelectionStrat DeckSelectionStrat @default(HIGHESTPRIO) // how target deck is selected
   similarWordRels SimilarWord[]
+
+  NewWordList NewWordList?
 }
 
 enum DeckSelectionStrat {
@@ -69,9 +70,17 @@ model WordDeck {
   account Account @relation(fields: [accountId], references: [id])
   accountId String
   words BelongsToWordDeck[]
-  priority Int
+  priority Int // priorities of word decks should form an arithmetic sequence
+  @@unique([accountId, priority])
 }
 
+model NewWordList {
+  id String @id @default(uuid())
+  account Account @relation(fields: [accountId], references: [id])
+  accountId String @unique
+  date DateTime
+  wordList Json // contains DATA (not just ids) of the new words of the day
+}
 
 model BelongsToWordDeck {
   word Word @relation(fields: [wordId], references: [id])
@@ -91,7 +100,7 @@ model WordKnownLevel {
   word Word @relation(fields: [wordId], references: [id])
   wordId String
 
-  knownLevel String // new, 0, 1, 2, 3, 4, 5
+  knownLevel String // 0, 1, 2, 3, 4, 5
   @@id([accountId, wordId])
 }
 

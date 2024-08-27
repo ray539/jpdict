@@ -9,7 +9,6 @@ const app = express()
 app.use(morgan('short'))
 app.use(express.json())
 
-
 async function loginAccount(username: string, password: string) {
   const account = await prisma.account.findFirst({
     where: {
@@ -17,7 +16,6 @@ async function loginAccount(username: string, password: string) {
       password: password
     }
   })
-
   return account;
 }
 
@@ -138,6 +136,7 @@ app.get('/api/getTDeckListForUser', async(req, res) => {
     })
 
     return {
+      id: obj.id,
       name: obj.name,
       totalWords: obj._count.words,
       knownWords: knownWords.length
@@ -157,10 +156,17 @@ app.put('/api/changeWordKnownLevel', async (req, res) => {
 
   const wordId = req.body.wordId as string
   const knownLevel = req.body.knownLevel as string
+  console.log(wordId);
+  console.log(knownLevel);
+  
+  
   const found = await prisma.word.findFirst({where: {id: wordId}})
+  console.log(found);
+  
   if (!found) {
     return res.status(403).json({error: 'wordId not found'})
   }
+  
 
   if (!['0', '1', '2', '3', '4', '5'].includes(knownLevel)) {
     return res.status(403).json({error: 'invalid known level'})
@@ -185,20 +191,45 @@ app.put('/api/changeWordKnownLevel', async (req, res) => {
 })
 
 /**
- * DEBUG
+ * return list of word information (including id and all that)
  */
-app.post('/api/incrementDays', async(req, res) => {
-  increment_days(1)
+app.get('/api/getWordsInDeck', async(req, res) => {
+  const username = req.headers.username as string
+  const password = req.headers.password as string;
+  const foundAccnt = await loginAccount(username, password)
+  if (!foundAccnt) {
+    return res.status(403).json({error: 'invalid credentials'})
+  }
+  const deckId = req.body.deckId
+
+  const words_ = await prisma.wordDeck.findUnique({
+    where: {
+      id: deckId,
+      accountId: foundAccnt.id
+    },
+    select: {
+      words: {
+        select: {
+          word: true
+        }
+      }
+    }
+  })
+  if (!words_) {
+    return res.status(403).json({error: 'deck not found'})
+  }
+
+  const words = words_.words.map(obj => obj.word);
+  return res.json(words)
 })
 
-app.post('/api/incrementHours', async (req, res) => {
-  increment_hours(1)
-})
-app.post('/api/deleteNewWords', async(req, res) => {
-  await prisma.newWordList.deleteMany()
-})
-
-
+/**
+ * body: {
+ *  strategy: string
+ *  timestamp: string
+ * }
+ * should be in body, since headers only accepts string type
+ */
 app.get('/api/getNewWordsList', async (req, res) => {
   const username = req.headers.username as string
   const password = req.headers.password as string;
@@ -208,7 +239,7 @@ app.get('/api/getNewWordsList', async (req, res) => {
   }
 
   const strategy = req.body.strategy as string
-  const timestamp = req.body.timestamp as number
+  const timestamp = req.body.timestamp as unknown as number
   const now = new Date(timestamp)
 
   // find the existing new word list entry
@@ -248,11 +279,15 @@ app.get('/api/getNewWordsList', async (req, res) => {
         wordDeckId: deck.id
       },
       select: {
+        seqNum: true,
         word: true
       },
       take: NUM_NEW_WORDS
     })
-    const words = words_.map(w => w.word)
+    const words = words_.map(w => {
+      let w2 = {...w.word, seqNum: w.seqNum}
+      return w2
+    })
     
     await prisma.newWordList.deleteMany({
       where: {
@@ -288,6 +323,7 @@ app.get('/api/getNewWordsList', async (req, res) => {
     return res.status(403).json({error: `strategy must be 'HIGHEST PRIO' or 'RANDOM'`})
   }
 })
+
 
 const PORT = process.env.PORT || 3004
 app.listen(PORT, () => {

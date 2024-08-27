@@ -1,9 +1,8 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useContext, useEffect, useState } from 'react';
-import { Button } from 'react-bootstrap';
 import { Link, Route, Routes, useNavigate } from 'react-router-dom';
 import AuthContextProvider, { AuthContext } from './context/AuthContextProvider';
-import { Login, TDeckInfo } from './common';
+import { TDeckInfo } from '../../global';
 import { getTDeckListForUser_service, register_service } from './service/service';
 
 function Links() {

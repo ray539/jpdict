@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { Account, TDeckInfo } from '../common';
+import { Account, TDeckInfo } from '../../../global';
 
 export interface MyError {
   error: string
@@ -25,7 +25,7 @@ function extractError(e: any) {
 
 export async function register_service(username: string, password: string) {
   try {
-    const res = await axios.post('/api/register', {
+    const res =  await axios.post('/api/register', {
       username: username,
       password: password
     })
@@ -64,7 +64,7 @@ export async function getTDeckListForUser_service(username: string, password: st
   }
 }
 
-export async function  changeWordKnownLevel_service(username: string, password: string) {
+export async function changeWordKnownLevel_service(username: string, password: string) {
   try {
     const res = await axios.put('/api/changeWordKnownLevel', {
       

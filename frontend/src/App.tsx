@@ -2,8 +2,11 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import { useContext, useEffect, useState } from 'react';
 import { Link, Route, Routes, useNavigate } from 'react-router-dom';
 import AuthContextProvider, { AuthContext } from './context/AuthContextProvider';
-import { TDeckInfo } from '../../global';
+import { Account, Card, TDeckInfo, Word } from '../../global';
 import { getTDeckListForUser_service, register_service } from './service/service';
+import { getCardsForWord, getExampleSentencesForWord, getNewWordsList } from './service/requestHelper';
+import { A } from './A';
+import { NewWords, NewWords_ } from './NewWords';
 
 function Links() {
   const authContext = useContext(AuthContext)
@@ -200,52 +203,6 @@ function Dashboard() {
   )
 }
 
-function NewWords_loggedIn() {
-  return (
-    <>
-      <h1>learn new words</h1>
-      <div style={{display: 'flex', height: '90vh', border: '1px solid red'}}>
-        <div style={{display: 'flex', alignItems: 'center', flexDirection: 'column', border: '1px solid black', minWidth: '5em', margin: '1em'}}>
-          <div style={{border: '1px solid black', paddingLeft: '0.5em', paddingRight: '0.5em', margin: '1em'}}>item1</div>
-        </div>
-
-        <div style={{border: '1px solid black', width: '100%', margin: '1em', padding: '1em'}}>
-          <div>create flashcard for</div>
-          <h1 style={{fontSize: 50}}>word</h1>
-          <div>reading: </div>
-          <div>other readings: </div>
-          <div>defnitions: </div>
-          <ol>
-            <li>def1</li>
-            <li>def2</li>
-            <li>def3</li>
-          </ol>
-          <h3>example sentences</h3>
-          <div>
-            <input type='checkbox'></input>
-            pick random sentence each time
-          </div>
-          <div>
-            <input type='checkbox'></input>
-            set fixed example sentence
-          </div>
-          <div style={{border: '1px solid black'}}>
-            <div style={{border: '1px solid black', paddingLeft: '0.5em', paddingRight: '0.5em', margin: '1em'}}>sentence 1</div>
-          </div>
-        </div>
-      </div>
-    </>
-  )
-}
-
-
-function NewWords() {
-  const authContext = useContext(AuthContext);
-  return (
-    authContext.account ? <NewWords_loggedIn/> : <div>you must login to access this feature</div>
-  )
-}
-
 function App() {
   return (
     <>
@@ -257,8 +214,9 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<Reigster />} />
             <Route path="/dashboard" element={<Dashboard/>} />
-            <Route path="/new-words" element={<NewWords />} />
-            <Route path="*" element={<div>not found</div>}/>
+            <Route path="/new-words/*" element={<NewWords_/>} />
+            <Route path="/a/:wordId" element={<A/>} />
+            <Route path="*" element={<div>App.tsx: page not found</div>}/>
           </Routes>
         </>
       </AuthContextProvider>

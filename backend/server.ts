@@ -200,7 +200,9 @@ app.get('/api/getWordsInDeck', async(req, res) => {
   if (!foundAccnt) {
     return res.status(403).json({error: 'invalid credentials'})
   }
-  const deckId = req.body.deckId
+  const deckId = req.query.deckId as string
+  console.log(username, password, deckId);
+  
 
   const words_ = await prisma.wordDeck.findUnique({
     where: {
@@ -238,8 +240,13 @@ app.get('/api/getNewWordsList', async (req, res) => {
     return res.status(403).json({error: 'invalid credentials'})
   }
 
-  const strategy = req.body.strategy as string
-  const timestamp = req.body.timestamp as unknown as number
+  const strategy = req.query.strategy as string
+  const timestamp_ = req.query.timestamp as string
+  const timestamp = Number(timestamp_)
+
+  // console.log(username, password, strategy, timestamp);
+  
+
   const now = new Date(timestamp)
 
   // find the existing new word list entry
@@ -305,28 +312,109 @@ app.get('/api/getNewWordsList', async (req, res) => {
 
     res.json(words)
   } else if (strategy == 'RANDOM') {
-    // const decks = await prisma.wordDeck.findMany({
-    //   where: {
-    //     accountId: foundAccnt.id
-    //   },
-    //   select: {
-    //     priority: true
-    //   }
-    // })
-    // const nums = decks.map(d => d.priority)
-    // if (nums.length == 0) {
-    //   res.json({msg: 'no target decks found'})
-    // }
-    // nums.sort()
     res.status(403).json({error: 'TODO'})
   } else {
     return res.status(403).json({error: `strategy must be 'HIGHEST PRIO' or 'RANDOM'`})
   }
 })
 
+app.get('/api/getWordKnownLevel', async(req, res) => {
+  const username = req.headers.username as string
+  const password = req.headers.password as string;
+  const foundAccnt = await loginAccount(username, password)
+  if (!foundAccnt) {
+    return res.status(403).json({error: 'invalid credentials'})
+  }
+
+  const wordId = req.query.wordId as string
+  const knownLevel_ = await prisma.wordKnownLevel.findUnique({
+    where: {
+      accountId_wordId: {
+        accountId: foundAccnt.id,
+        wordId: wordId
+      }
+    },
+    select: {
+      knownLevel: true
+    }
+  })
+  if (knownLevel_) {
+    res.json(knownLevel_.knownLevel)
+  } else {
+    res.json('new')
+  }
+})
+
+app.get('/api/getExampleSentencesForWord', async(req, res) => {
+  const username = req.headers.username as string
+  const password = req.headers.password as string;
+  const foundAccnt = await loginAccount(username, password)
+  if (!foundAccnt) {
+    return res.status(403).json({error: 'invalid credentials'})
+  }
+
+  const wordId = req.query.wordId as string;
+  const exampleSentences = await prisma.exampleSentence.findMany({
+    where: {
+      default_wordId: wordId
+    }
+  })
+
+  res.json(exampleSentences)
+})
+
+app.get('/api/getWord', async(req, res) => {
+  const username = req.headers.username as string
+  const password = req.headers.password as string;
+  const foundAccnt = await loginAccount(username, password)
+  if (!foundAccnt) {
+    return res.status(403).json({error: 'invalid credentials'})
+  }
+  const wordId = req.query.wordId as string;
+  const word = await prisma.word.findFirst({
+    where: {
+      id: wordId
+    }
+  })
+  res.json(word)
+});
+
+app.get('/api/getCard', async(req, res) => {
+  const username = req.headers.username as string
+  const password = req.headers.password as string;
+  const foundAccnt = await loginAccount(username, password)
+  if (!foundAccnt) {
+    return res.status(403).json({error: 'invalid credentials'})
+  }
+  const cardId = req.query.cardId as string;
+  const word = await prisma.card.findFirst({
+    where: {
+      id: cardId
+    }
+  })
+  res.json(word)
+});
+
+app.get('/api/getCardsForWord', async(req, res) => {
+  const username = req.headers.username as string
+  const password = req.headers.password as string;
+  const foundAccnt = await loginAccount(username, password)
+  if (!foundAccnt) {
+    return res.status(403).json({error: 'invalid credentials'})
+  }
+  const wordId = req.query.wordId as string;
+
+  const cards = await prisma.card.findMany({
+    where: {
+      accountId: foundAccnt.id,
+      wordId: wordId
+    }
+  })
+
+  res.json(cards)
+})
 
 const PORT = process.env.PORT || 3004
 app.listen(PORT, () => {
-  console.log(`app listening on port ${PORT}`);
-  
+  console.log(`app listening on port ${PORT}`);  
 })

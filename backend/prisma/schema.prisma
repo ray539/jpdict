@@ -134,6 +134,6 @@ model Card {
   cardData Json
   knownLevel Int
 
-  lastReviewed DateTime
+  lastReviewed DateTime?
   dateAdded DateTime
 }

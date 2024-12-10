@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import axios, { AxiosResponse } from 'axios'
-import { changeWordKnownLevel, getTDeckListForUser, getWordsInDeck, register, setBaseUrl  } from '../../frontend/src/service/requestHelper'
+import { changeWordKnownLevel, getCard, getCardsForWord, getExampleSentencesForWord, getNewWordsList, getTDeckListForUser, getWord, getWordKnownLevel, getWordsInDeck, register, setBaseUrl  } from '../../frontend/src/service/requestHelper'
+import { log } from "console";
 const prisma = new PrismaClient();
 // const BASEURL = 'http://localhost:3004'
 
@@ -21,6 +22,11 @@ async function reset() {
   await register('a', 'b')
 }
 
+/**
+ * - create a user
+ * - mark 3 words as known
+ * - check that the known words statistics has updated
+ */
 async function getTDeckListForUser_afterKnownWordChange() {
   await reset();
   let decks = await getTDeckListForUser('a', 'b');
@@ -49,17 +55,124 @@ async function getTDeckListForUser_afterKnownWordChange() {
   }
   console.log('final decks');
   console.log(decks);
+  // await reset();
+}
+
+async function getWordKnownLevel_afterSet() {
   await reset();
+  let decks = await getTDeckListForUser('a', 'b');
+  if ('error' in decks) {
+    console.log('failed');
+    return;
+  }
+  const deck = decks[0];
+  console.log('initial decks');
+  console.log(deck);
+  const words = await getWordsInDeck('a', 'b', deck.id)
+  if ('error' in words) {
+    console.log(words)
+    return;
+  }
+  await changeWordKnownLevel('a', 'b', words[0].id, '1');
+
+  const k0 = await getWordKnownLevel('a', 'b', words[0].id)
+  console.log(k0);
+  const k4 = await getWordKnownLevel('a', 'b', words[1].id)
+  console.log(k4);
+}
+
+async function getExampleSentencesForWord_1() {
+  await reset();
+  let decks = await getTDeckListForUser('a', 'b');
+  if ('error' in decks) {
+    console.log('failed');
+    return;
+  }
+  const deck = decks[0];
+  console.log('initial decks');
+  console.log(deck);
+  const words = await getWordsInDeck('a', 'b', deck.id)
+  if ('error' in words) {
+    console.log(words)
+    return;
+  }
+  const word = words[10]
+  console.log(word.kanji);
+  const sentences = await getExampleSentencesForWord('a', 'b', word.id)
+  console.log(sentences);
+}
+
+async function getCardsForWord_1() {
+  await reset();
+  let decks = await getTDeckListForUser('a', 'b');
+  if ('error' in decks) {
+    console.log('failed');
+    return;
+  }
+  const deck = decks[0];
+  console.log('initial decks');
+  console.log(deck);
+  const words = await getWordsInDeck('a', 'b', deck.id)
+  if ('error' in words) {
+    console.log(words)
+    return;
+  }
+  const word = words[10]
+  console.log(word.kanji);
+  const cards = await getCardsForWord('a', 'b', word.id)
+  console.log(cards);
+  
 }
 
 async function getNewWordsList_1() {
   await reset();
-  
+  let decks = await getTDeckListForUser('a', 'b');
+  if ('error' in decks) {
+    console.log('failed');
+    return;
+  }
+  const deck = decks[0];
+  console.log('initial deck');
+  console.log(deck);
+  const words = await getWordsInDeck('a', 'b', deck.id)
+  if ('error' in words) {
+    console.log(words)
+    return;
+  }
+  console.log('first 5 words in deck');
+  for (let i = 0; i < 5; i++) {
+    console.log(' ' + words[i].kanji);
+  }
+  let newWords = await getNewWordsList('a', 'b', 'HIGHEST PRIO', 0);
+  console.log('first time');
+  console.log(newWords);
+  console.log('after cache');
+  newWords = await getNewWordsList('a', 'b', 'HIGHEST PRIO', 15 * 3600 * 1000);
+  console.log(newWords);
+  console.log('database entry');
+  const acntId = (await prisma.account.findFirst({
+    where: {
+      username: 'a'
+    }
+  }))?.id
+
+  const entry = await prisma.newWordList.findUnique({
+    where: {
+      accountId: acntId
+    }
+  })
+  console.log(entry);
 }
 
 
 async function main() {
-  getTDeckListForUser_afterKnownWordChange()
+  // get a word
+  setBaseUrl('http://localhost:3004')
+  let card = await getCard('a', 'b', "00a2eae8-c4a0-4b7e-aede-4fcf148814ea")
+  console.log(card);
+  
+  
+  
 }
 
 main()

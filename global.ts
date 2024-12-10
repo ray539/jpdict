@@ -42,3 +42,31 @@ export interface Word {
   readingOther: [string]
   definitions: [Definition]
 }
+
+export interface ExampleSentence {
+  id: string;
+  jpn: string;
+  eng: string;
+  default_word_wordForm: string;
+  default_wordId: string;
+}
+
+export interface CardData {
+  entrySeq: string
+  kanji: string
+  kanjiOther: string
+  reading: string
+  readingOther: string
+  definitions: string
+  exampleSentences: ExampleSentence[]
+}
+
+export interface Card {
+  id: string;
+  accountId: string;
+  wordId: string;
+  cardData: CardData;
+  knownLevel: number;
+  lastReviewed: Date | null;
+  dateAdded: Date;
+}

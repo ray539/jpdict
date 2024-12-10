@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios'
-import {Account, TDeckInfo, Word} from '../../../global'
+import {Account, Card, ExampleSentence, TDeckInfo, Word} from '../../../global'
 let BASEURL = ''
 
 /**
@@ -87,13 +87,14 @@ export async function getWordsInDeck(username: string, password: string, deckId:
   try {
     const res = await axios.get(`${BASEURL}/api/getWordsInDeck`, 
       {
-      headers: {
-        username: username,
-        password: password
-      },
-      data: {
+      params: {
         deckId: deckId
       },
+      headers: {
+        username: username,
+        password: password,
+      },
+      
     })
     return res.data as Word[];
   } catch (e) {
@@ -101,19 +102,118 @@ export async function getWordsInDeck(username: string, password: string, deckId:
   }
 }
 
+export async function getWord(username: string, password: string, wordId: string) {
+  try {
+    const res = await axios.get(`${BASEURL}/api/getWord`, 
+      {
+      params: {
+        wordId: wordId
+      },
+      headers: {
+        username: username,
+        password: password,
+      },
+    })
+    if (res.data) {
+      return res.data as Word;
+    } else {
+      return {error: 'word not found'}
+    }
+    
+  } catch (e) {
+    return extractError(e)
+  }
+}
+
+export async function getCard(username: string, password: string, cardId: string) {
+  try {
+    const res = await axios.get(`${BASEURL}/api/getCard`, 
+      {
+      params: {
+        cardId: cardId
+      },
+      headers: {
+        username: username,
+        password: password,
+      },
+    })
+    if (res.data) {
+      return res.data as Card;
+    } else {
+      return {error: 'card not found'}
+    }
+    
+  } catch (e) {
+    return extractError(e)
+  }
+}
+
 export async function getNewWordsList(username: string, password: string, strategy: string, timestamp: number) {
   try {
+    console.log(username, password, strategy, timestamp);
+    
     const res = await axios.get(`${BASEURL}/api/getNewWordsList`, {
       headers: {
         username: username,
         password: password
       },
-      data: {
+      params: {
         strategy: strategy,
         timestamp: timestamp
       }
     })
     return res.data as Word[];
+  } catch (e) {
+    return extractError(e)
+  }
+}
+
+export async function getWordKnownLevel(username: string, password: string, wordId: string) {
+  try {
+    const res = await axios.get(`${BASEURL}/api/getWordKnownLevel`, {
+      headers: {
+        username: username,
+        password: password
+      },
+      params: {
+        wordId: wordId
+      }
+    })
+    return res.data as string;
+  } catch (e) {
+    return extractError(e)
+  }
+}
+
+export async function getExampleSentencesForWord(username: string, password: string, wordId: string) {
+  try {
+    const res = await axios.get(`${BASEURL}/api/getExampleSentencesForWord`, {
+      headers: {
+        username: username,
+        password: password
+      },
+      params: {
+        wordId: wordId
+      }
+    })
+    return res.data as ExampleSentence[];
+  } catch (e) {
+    return extractError(e)
+  }
+}
+
+export async function getCardsForWord(username: string, password: string, wordId: string) {
+  try {
+    const res = await axios.get(`${BASEURL}/api/getCardsForWord`, {
+      headers: {
+        username: username,
+        password: password
+      },
+      params: {
+        wordId: wordId
+      }
+    })
+    return res.data as Card[];
   } catch (e) {
     return extractError(e)
   }

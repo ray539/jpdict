@@ -1,0 +1,28 @@
+{
+    "id": "new",
+    "accountId": "2554db9e-09d2-4968-a2f3-27adb12292f2",
+    "wordId": "00a2eae8-c4a0-4b7e-aede-4fcf148814ea",
+    "cardData": {
+        "entrySeq": "1535650",
+        "kanji": "目標",
+        "kanjiOther": "",
+        "reading": "もくひょう",
+        "readingOther": "",
+        "definitions": [
+            "goal;target;aim;objective.noun (common) (futsuumeishi)",
+            "mark;sign;landmark.noun (common) (futsuumeishi)"
+        ],
+        "exampleSentences": [
+            {
+                "id": "f19e2188-1ecb-4cb6-aa93-466f9471803c",
+                "jpn": "売れ行きは目標に達しなかった。",
+                "eng": "Sales fell short of their goal.",
+                "default_word_wordForm": "目標",
+                "default_wordId": "00a2eae8-c4a0-4b7e-aede-4fcf148814ea"
+            }
+        ]
+    },
+    "knownLevel": 0,
+    "lastReviewed": null,
+    "dateAdded": "2024-12-08T22:50:41.771Z"
+}

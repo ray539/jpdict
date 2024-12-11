@@ -218,3 +218,53 @@ export async function getCardsForWord(username: string, password: string, wordId
     return extractError(e)
   }
 }
+
+export async function createCard(username: string, password: string, card: Card) {
+  try {
+    const res = await axios.post(`${BASEURL}/api/createCard`, {
+      headers: {
+        username: username,
+        password: password
+      },
+      data: card
+    })
+    return res.data as Card;
+  } catch (e) {
+    return extractError(e)
+  }
+}
+
+export async function updateCard(username: string, password: string, cardId: string, newCard: Card) {
+  try {
+    const res = await axios.put(`${BASEURL}/api/updateCard`, {
+      headers: {
+        username: username,
+        password: password
+      },
+      data: {
+        cardId: cardId,
+        newCard: newCard
+      }
+    })
+    return res.data as Card;
+  } catch (e) {
+    return extractError(e)
+  }
+}
+
+export async function deleteCard(username: string, password: string, cardId: string) {
+  try {
+    const res = await axios.delete(`${BASEURL}/api/deleteCard`, {
+      headers: {
+        username: username,
+        password: password
+      },
+      params: {
+        cardId: cardId,
+      }
+    })
+    return res.data as Card;
+  } catch (e) {
+    return extractError(e)
+  }
+}

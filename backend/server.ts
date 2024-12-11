@@ -3,6 +3,7 @@ import { Prisma, PrismaClient } from "@prisma/client";
 import 'express-async-errors'
 import morgan from 'morgan'
 import { increment_days, increment_hours, now_ } from './common';
+import { connect } from 'http2';
 
 const prisma = new PrismaClient();
 const app = express()
@@ -408,11 +409,100 @@ app.get('/api/getCardsForWord', async(req, res) => {
     where: {
       accountId: foundAccnt.id,
       wordId: wordId
+    },
+    orderBy: {
+      dateAdded: 'asc'
     }
   })
 
   res.json(cards)
 })
+
+app.post('/api/createCard', async(req, res) => {
+  const username = req.headers.username as string
+  const password = req.headers.password as string;
+  const foundAccnt = await loginAccount(username, password)
+  if (!foundAccnt) {
+    return res.status(403).json({error: 'invalid credentials'})
+  }
+  const card = req.body.data;
+
+  // we have to link it to the account and the word the card is for
+  // therefore, we use the 'connect' option
+  const createdCard = await prisma.card.create({
+    data: {
+      cardData: card.cardData,
+      dateAdded: card.dateAdded,
+      knownLevel: card.knownLevel,
+      lastReviewed: card.lastReviewed,
+      account: {
+        connect: {
+          id: card.accountId
+        }
+      },
+      word: {
+        connect: {
+          id: card.wordId
+        }
+      }
+    }
+  })
+  return res.json(createdCard)
+})
+
+app.put('/api/updateCard', async(req, res) => {
+  const username = req.headers.username as string
+  const password = req.headers.password as string;
+  const foundAccnt = await loginAccount(username, password)
+  if (!foundAccnt) {
+    return res.status(403).json({error: 'invalid credentials'})
+  }
+
+  const cardId = req.body.data.cardId;
+  const newCard = req.body.data.newCard;
+
+  // we have to link it to the account and the word the card is for
+  // therefore, we use the 'connect' option
+  const createdCard = await prisma.card.update({
+    where: {
+      id: cardId
+    },
+    data: {
+      cardData: newCard.cardData,
+      dateAdded: newCard.dateAdded,
+      knownLevel: newCard.knownLevel,
+      lastReviewed: newCard.lastReviewed,
+      account: {
+        connect: {
+          id: newCard.accountId
+        }
+      },
+      word: {
+        connect: {
+          id: newCard.wordId
+        }
+      }
+    }
+  })
+  return res.json(createdCard)
+})
+
+app.delete('/api/deleteCard', async(req, res) => {
+  const username = req.headers.username as string
+  const password = req.headers.password as string;
+  const foundAccnt = await loginAccount(username, password)
+  if (!foundAccnt) {
+    return res.status(403).json({error: 'invalid credentials'})
+  }
+  const cardId = req.query.cardId as string;
+  const deletedCard = await prisma.card.delete({
+    where: {
+      id: cardId
+    }
+  })
+  res.json(deletedCard)
+})
+
 
 const PORT = process.env.PORT || 3004
 app.listen(PORT, () => {

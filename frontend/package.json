@@ -16,7 +16,8 @@
     "react-bootstrap": "^2.10.2",
     "react-dom": "^18.2.0",
     "react-edit-text": "^5.1.1",
-    "use-immer": "^0.10.0"
+    "use-immer": "^0.10.0",
+    "uuid": "^11.0.3"
   },
   "devDependencies": {
     "@types/react": "^18.2.66",

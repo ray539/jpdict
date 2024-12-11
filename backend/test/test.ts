@@ -164,12 +164,16 @@ async function getNewWordsList_1() {
   console.log(entry);
 }
 
+async function deleteAllCards() {
+  await prisma.card.deleteMany()
+}
 
 async function main() {
   // get a word
   setBaseUrl('http://localhost:3004')
-  let card = await getCard('a', 'b', "00a2eae8-c4a0-4b7e-aede-4fcf148814ea")
-  console.log(card);
+  // let card = await getCard('a', 'b', "00a2eae8-c4a0-4b7e-aede-4fcf148814ea")
+  // console.log(card);
+  deleteAllCards()
   
   
   

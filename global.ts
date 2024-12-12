@@ -68,5 +68,6 @@ export interface Card {
   cardData: CardData;
   knownLevel: number;
   lastReviewed: Date | null;
+  timeDue: Date
   dateAdded: Date;
 }

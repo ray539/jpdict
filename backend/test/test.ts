@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import axios, { AxiosResponse } from 'axios'
-import { changeWordKnownLevel, getCard, getCardsForWord, getExampleSentencesForWord, getNewWordsList, getTDeckListForUser, getWord, getWordKnownLevel, getWordsInDeck, register, setBaseUrl  } from '../../frontend/src/service/requestHelper'
+import { changeWordKnownLevel, getCard, getCardsForWord, getDueCards, getExampleSentencesForWord, getNewWordsList, getTDeckListForUser, getWord, getWordKnownLevel, getWordsInDeck, register, setBaseUrl  } from '../../frontend/src/service/requestHelper'
 import { log } from "console";
 const prisma = new PrismaClient();
 // const BASEURL = 'http://localhost:3004'
@@ -169,14 +169,15 @@ async function deleteAllCards() {
 }
 
 async function main() {
-  // get a word
+  // get all cards
   setBaseUrl('http://localhost:3004')
-  // let card = await getCard('a', 'b', "00a2eae8-c4a0-4b7e-aede-4fcf148814ea")
-  // console.log(card);
-  deleteAllCards()
   
+  const mx = (new Date(2500, 11, 1,1,1)).getTime();
+  const cards = await getDueCards('a', 'b', mx, 10000);
+
+  console.log(JSON.stringify(cards, null, 4));
   
-  
+
 }
 
 main()

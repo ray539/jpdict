@@ -268,3 +268,65 @@ export async function deleteCard(username: string, password: string, cardId: str
     return extractError(e)
   }
 }
+
+
+// ATTEMPT AT CONTROLLING THE DATE
+
+// export async function now() {
+//   try {
+//     const res = await axios.get(`${BASEURL}/api/now`);
+//     return Number(res.data);
+//   } catch (e) {
+//   }
+// }
+
+// export async function incrementDays(d: number) {
+//   try {
+//     const res = await axios.get(`${BASEURL}/api/incrementDays`, {
+//       params: {
+//         d: d
+//       }
+//     });
+//   } catch (e) {
+//   }
+// }
+
+// export async function incrementHours(d: number) {
+//   try {
+//     const res = await axios.get(`${BASEURL}/api/incrementHours`, {
+//       params: {
+//         d: d
+//       }
+//     });
+//   } catch (e) {
+//   }
+// }
+
+// export async function resetTo(d: number) {
+//   try {
+//     const res = await axios.get(`${BASEURL}/api/resetTo`, {
+//       params: {
+//         d: d
+//       }
+//     });
+//   } catch (e) {
+//   }
+// }
+
+export async function getDueCards(username: string, password: string, timestamp: number, limit: number) {
+  try {
+    const res = await axios.get(`${BASEURL}/api/getDueCards`, {
+      headers: {
+        username: username,
+        password: password
+      },
+      params: {
+        timestamp: timestamp,
+        limit: limit
+      }
+    })
+    return res.data as Card[];
+  } catch (e) {
+    return extractError(e)
+  }
+}

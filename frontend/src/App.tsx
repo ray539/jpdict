@@ -4,9 +4,12 @@ import { Link, Route, Routes, useNavigate } from 'react-router-dom';
 import AuthContextProvider, { AuthContext } from './context/AuthContextProvider';
 import { Account, Card, TDeckInfo, Word } from '../../global';
 import { getTDeckListForUser_service, register_service } from './service/service';
-import { getCardsForWord, getExampleSentencesForWord, getNewWordsList } from './service/requestHelper';
+import { getCardsForWord, getExampleSentencesForWord } from './service/requestHelper';
 import { A } from './A';
 import { NewWords, NewWords_ } from './NewWords';
+import { ReviewCards, ReviewCards_ } from './ReviewCards';
+// DEBUG
+// import { increment_days, increment_hours, now_ } from './stubDate';
 
 function Links() {
   const authContext = useContext(AuthContext)
@@ -135,6 +138,7 @@ function Reigster() {
 function Dashboard_loggedIn() {
   const authContext = useContext(AuthContext)
   const [tDeckInfo, setTDeckInfo] = useState<TDeckInfo[] | null>(null);
+  const navigate = useNavigate();
   
   // get the decks for the user
   useEffect(() => {
@@ -167,7 +171,7 @@ function Dashboard_loggedIn() {
         
       </div>
       <div>
-        <button>review due cads</button>
+        <button onClick={() => navigate('/review-cards')}>review due cads</button>
       </div>
       <h2>target word decks</h2>
       {
@@ -215,12 +219,12 @@ function App() {
             <Route path="/register" element={<Reigster />} />
             <Route path="/dashboard" element={<Dashboard/>} />
             <Route path="/new-words/*" element={<NewWords_/>} />
+            <Route path="/review-cards/*" element={<ReviewCards_ />} />
             <Route path="/a/:wordId" element={<A/>} />
             <Route path="*" element={<div>App.tsx: page not found</div>}/>
           </Routes>
         </>
       </AuthContextProvider>
-
     </>
   )
 }

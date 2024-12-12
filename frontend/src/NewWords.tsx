@@ -7,6 +7,7 @@ import { EditTextarea } from "react-edit-text";
 import { Updater, useImmer } from "use-immer";
 import { Button } from "react-bootstrap";
 import { v4 as uuidv4 } from 'uuid';
+import { getCurrTimestamp } from "./time";
 
 interface CardView {
   cardId: string
@@ -48,6 +49,7 @@ function PageContextProvider({children}: {children: ReactElement}) {
 }
 
 async function getCardFromWord(word: Word, acct: Account) {
+  const currTimestamp = getCurrTimestamp();
   const newCard : Card = {
     id: 'new',
     accountId: acct.id,
@@ -63,7 +65,8 @@ async function getCardFromWord(word: Word, acct: Account) {
     },
     knownLevel: 0,
     lastReviewed: null,
-    dateAdded: new Date()
+    timeDue: new Date(currTimestamp + 1800 * 1000), // due half an hour from now
+    dateAdded: new Date(currTimestamp)
   }
   const egSentences = await getExampleSentencesForWord(acct.username, acct.password, word.id);
   if ('error' in egSentences) {
@@ -269,7 +272,7 @@ function CardView({wIndex, cIndex} : {wIndex: number, cIndex: number}) {
           // [create new card]
           <button style={{backgroundColor: 'lightblue', fontSize: '20px'}} onClick={async () => {
             updatePageState(old => {
-              old.words![wIndex].cards![cIndex].card!.dateAdded = new Date();
+              old.words![wIndex].cards![cIndex].card!.dateAdded = new Date(getCurrTimestamp());
             })
             let card = pageState.words![wIndex].cards![cIndex]!.card!;
             const res = await createCard(acct.username, acct.password, card);

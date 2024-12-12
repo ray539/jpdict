@@ -135,5 +135,6 @@ model Card {
   knownLevel Int
 
   lastReviewed DateTime?
+  timeDue DateTime
   dateAdded DateTime
 }

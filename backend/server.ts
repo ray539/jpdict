@@ -2,9 +2,6 @@ import express from 'express'
 import { Prisma, PrismaClient } from "@prisma/client";
 import 'express-async-errors'
 import morgan from 'morgan'
-import { increment_days, increment_hours, now_ } from './common';
-import { connect } from 'http2';
-
 const prisma = new PrismaClient();
 const app = express()
 app.use(morgan('short'))
@@ -246,22 +243,21 @@ app.get('/api/getNewWordsList', async (req, res) => {
   const timestamp = Number(timestamp_)
 
   // console.log(username, password, strategy, timestamp);
-  
 
   const now = new Date(timestamp)
 
   // find the existing new word list entry
-  const newWordList = await prisma.newWordList.findUnique({where: {
-    accountId: foundAccnt.id
-  }})
+  // const newWordList = await prisma.newWordList.findUnique({where: {
+  //   accountId: foundAccnt.id
+  // }})
 
   const DAY_LENGTH = 24 * 3600 * 1000
   const NUM_NEW_WORDS = 10
 
-  if (newWordList && now.getTime() - newWordList.date.getTime() <= DAY_LENGTH) {
-    console.log('return cached');
-    return res.json(newWordList.wordList)
-  }
+  // if (newWordList && now.getTime() - newWordList.date.getTime() <= DAY_LENGTH) {
+  //   console.log('return cached');
+  //   return res.json(newWordList.wordList)
+  // }
 
   // x is null, or it is too late
   if (strategy == 'HIGHEST PRIO') {
@@ -297,19 +293,19 @@ app.get('/api/getNewWordsList', async (req, res) => {
       return w2
     })
     
-    await prisma.newWordList.deleteMany({
-      where: {
-        accountId: foundAccnt.id
-      }
-    })
+    // await prisma.newWordList.deleteMany({
+    //   where: {
+    //     accountId: foundAccnt.id
+    //   }
+    // })
 
-    await prisma.newWordList.create({
-      data: {
-        accountId: foundAccnt.id,        
-        date: now,
-        wordList: (words as Prisma.JsonArray)
-      }
-    })
+    // await prisma.newWordList.create({
+    //   data: {
+    //     accountId: foundAccnt.id,        
+    //     date: now,
+    //     wordList: (words as Prisma.JsonArray)
+    //   }
+    // })
 
     res.json(words)
   } else if (strategy == 'RANDOM') {
@@ -435,6 +431,7 @@ app.post('/api/createCard', async(req, res) => {
       dateAdded: card.dateAdded,
       knownLevel: card.knownLevel,
       lastReviewed: card.lastReviewed,
+      timeDue: card.timeDue,
       account: {
         connect: {
           id: card.accountId
@@ -472,6 +469,7 @@ app.put('/api/updateCard', async(req, res) => {
       dateAdded: newCard.dateAdded,
       knownLevel: newCard.knownLevel,
       lastReviewed: newCard.lastReviewed,
+      timeDue: newCard.timeDue,
       account: {
         connect: {
           id: newCard.accountId
@@ -501,6 +499,29 @@ app.delete('/api/deleteCard', async(req, res) => {
     }
   })
   res.json(deletedCard)
+})
+
+// get all cards which are due (so, cur time > due time)
+app.get('/api/getDueCards', async(req, res) => {
+  const username = req.headers.username as string
+  const password = req.headers.password as string;
+  const foundAccnt = await loginAccount(username, password)
+  if (!foundAccnt) {
+    return res.status(403).json({error: 'invalid credentials'})
+  }
+  const now_timestamp = Number(req.query.timestamp);
+  const limit = Number(req.query.limit)
+  // console.log(now_timestamp, limit);
+  
+  const dueCards = await prisma.card.findMany({
+    where: {
+      timeDue: {
+        lt: (new Date(now_timestamp))
+      }
+    },
+    take: limit
+  })
+  res.json(dueCards)
 })
 
 

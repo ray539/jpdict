@@ -1,0 +1,276 @@
+[
+  {
+      "id": "0d6a8aca-88bc-462a-a9b6-47172bc37fad",
+      "accountId": "4130041f-cdd0-4ae3-9d06-aac61e45dc9d",
+      "wordId": "00e48c0e-4c41-4a68-9782-cf5834458b57",
+      "cardData": {
+          "kanji": "部門",
+          "reading": "ぶもん",
+          "entrySeq": "1499540",
+          "kanjiOther": "",
+          "definitions": "1. division (of a larger group);branch;field;class (subclass);group;category;department. noun (common) (futsuumeishi), nouns which may take the genitive case particle 'no'",
+          "readingOther": "",
+          "exampleSentences": [
+              {
+                  "id": "838549c1-69a9-4760-852c-7ff60b4f2e4e",
+                  "eng": "History is a branch of the humanities.",
+                  "jpn": "歴史学は人文科学の一部門である。",
+                  "default_wordId": "00e48c0e-4c41-4a68-9782-cf5834458b57",
+                  "default_word_wordForm": "部門"
+              }
+          ]
+      },
+      "knownLevel": 0,
+      "lastReviewed": null,
+      "timeDue": "2024-12-12T02:05:09.115Z",
+      "dateAdded": "2024-12-12T01:35:09.115Z"
+  },
+  {
+      "id": "1e9ae6cc-be6c-4e9e-bf91-ac21dd7b659e",
+      "accountId": "4130041f-cdd0-4ae3-9d06-aac61e45dc9d",
+      "wordId": "0365bba1-d7b1-4da3-bc84-1b3bd434b394",
+      "cardData": {
+          "kanji": "内閣",
+          "reading": "ないかく",
+          "entrySeq": "1457910",
+          "kanjiOther": "",
+          "definitions": "1. cabinet (of a government);ministry. noun (common) (futsuumeishi)",
+          "readingOther": "",
+          "exampleSentences": [
+              {
+                  "id": "e2dfabae-40e4-43c3-a496-2c162a978635",
+                  "eng": "They say the Cabinet will resign.",
+                  "jpn": "内閣は辞職するそうだ。",
+                  "default_wordId": "0365bba1-d7b1-4da3-bc84-1b3bd434b394",
+                  "default_word_wordForm": "内閣"
+              }
+          ]
+      },
+      "knownLevel": 0,
+      "lastReviewed": null,
+      "timeDue": "2024-12-12T02:05:36.188Z",
+      "dateAdded": "2024-12-12T01:35:36.188Z"
+  },
+  {
+      "id": "1f2bc982-a6f7-4c4c-a126-6315c147b8bf",
+      "accountId": "4130041f-cdd0-4ae3-9d06-aac61e45dc9d",
+      "wordId": "011f7046-6fb1-42d6-96b8-3e90429c6b26",
+      "cardData": {
+          "kanji": "大会",
+          "reading": "たいかい",
+          "entrySeq": "1413180",
+          "kanjiOther": "",
+          "definitions": "1. mass meeting;convention;rally;conference;assembly;gathering. noun (common) (futsuumeishi)\n2. tournament;competition;contest;meet. noun (common) (futsuumeishi)\n3. grand event. noun (common) (futsuumeishi)",
+          "readingOther": "",
+          "exampleSentences": [
+              {
+                  "id": "11eb7247-b0b9-40c4-a498-3b24d652e01d",
+                  "eng": "Either he or I have to attend the convention.",
+                  "jpn": "彼か私のどちらかが大会に出席しなければならない。",
+                  "default_wordId": "011f7046-6fb1-42d6-96b8-3e90429c6b26",
+                  "default_word_wordForm": "大会"
+              },
+              {
+                  "id": "7f81f10a-85fe-4d6f-a07f-55b5c5a60458",
+                  "eng": "You have just won a prize of $5000 in a California state safety competition for proper use of your seatbelt.",
+                  "jpn": "あなたはシートベルトをちゃんと使用していたとして、カリフォルニア州交通安全大会において賞金５０００ドルを獲得されました。",
+                  "default_wordId": "011f7046-6fb1-42d6-96b8-3e90429c6b26",
+                  "default_word_wordForm": "大会"
+              }
+          ]
+      },
+      "knownLevel": 0,
+      "lastReviewed": null,
+      "timeDue": "2024-12-12T02:05:28.138Z",
+      "dateAdded": "2024-12-12T01:35:28.138Z"
+  },
+  {
+      "id": "259a3edf-510b-47a8-9ab6-c20b4a6932d6",
+      "accountId": "4130041f-cdd0-4ae3-9d06-aac61e45dc9d",
+      "wordId": "046ed37a-7cdb-4008-82fa-411aa96a2686",
+      "cardData": {
+          "kanji": "春",
+          "reading": "はる",
+          "entrySeq": "1341000",
+          "kanjiOther": "",
+          "definitions": "1. spring;springtime. noun (common) (futsuumeishi), adverb (fukushi)\n2. New Year. noun (common) (futsuumeishi)\n3. prime (of life);height (of one's prosperity);heyday. noun (common) (futsuumeishi)\n4. adolescence;puberty. noun (common) (futsuumeishi)\n5. sexuality;sexual desire. noun (common) (futsuumeishi)",
+          "readingOther": "",
+          "exampleSentences": [
+              {
+                  "id": "f297677c-7d94-482b-bdfd-4dccaab8ea3b",
+                  "eng": "Many plants bloom in the spring.",
+                  "jpn": "多くの植物は春に花をつける。",
+                  "default_wordId": "046ed37a-7cdb-4008-82fa-411aa96a2686",
+                  "default_word_wordForm": "春"
+              }
+          ]
+      },
+      "knownLevel": 0,
+      "lastReviewed": null,
+      "timeDue": "2024-12-12T02:05:48.140Z",
+      "dateAdded": "2024-12-12T01:35:48.140Z"
+  },
+  {
+      "id": "3113b921-b74e-44b6-a686-9b45e7453eaf",
+      "accountId": "4130041f-cdd0-4ae3-9d06-aac61e45dc9d",
+      "wordId": "01089d2a-4a02-4d12-a8f4-3d7182bd4716",
+      "cardData": {
+          "kanji": "判決",
+          "reading": "はんけつ",
+          "entrySeq": "1478520",
+          "kanjiOther": "",
+          "definitions": "1. judicial decision;judgement;judgment;sentence;decree. noun (common) (futsuumeishi), noun or participle which takes the aux. verb suru, transitive verb",
+          "readingOther": "",
+          "exampleSentences": [
+              {
+                  "id": "a93ffe98-6249-4745-9c25-aaf49bc1d513",
+                  "eng": "The judgement went against him.",
+                  "jpn": "彼に不利な判決がでた。",
+                  "default_wordId": "01089d2a-4a02-4d12-a8f4-3d7182bd4716",
+                  "default_word_wordForm": "判決"
+              }
+          ]
+      },
+      "knownLevel": 0,
+      "lastReviewed": null,
+      "timeDue": "2024-12-12T02:05:24.440Z",
+      "dateAdded": "2024-12-12T01:35:24.440Z"
+  },
+  {
+      "id": "3b97ce0f-e8d2-4931-979b-33a3792da597",
+      "accountId": "4130041f-cdd0-4ae3-9d06-aac61e45dc9d",
+      "wordId": "0397fab4-7cae-4438-9390-73ff7f69fe83",
+      "cardData": {
+          "kanji": "動き",
+          "reading": "うごき",
+          "entrySeq": "1451180",
+          "kanjiOther": "",
+          "definitions": "1. movement;move;motion. noun (common) (futsuumeishi)\n2. trend;development;change;fluctuation. noun (common) (futsuumeishi)",
+          "readingOther": "",
+          "exampleSentences": [
+              {
+                  "id": "412280e9-7522-4c56-8499-fb6b44e036c1",
+                  "eng": "Love moves in mysterious ways.",
+                  "jpn": "愛の動きは不可解。",
+                  "default_wordId": "0397fab4-7cae-4438-9390-73ff7f69fe83",
+                  "default_word_wordForm": "動き"
+              }
+          ]
+      },
+      "knownLevel": 0,
+      "lastReviewed": null,
+      "timeDue": "2024-12-12T02:05:44.557Z",
+      "dateAdded": "2024-12-12T01:35:44.557Z"
+  },
+  {
+      "id": "409cdf3c-195a-42e2-8822-cee1649cd8d9",
+      "accountId": "4130041f-cdd0-4ae3-9d06-aac61e45dc9d",
+      "wordId": "00e4d9dd-1e6a-48b6-9121-504883312ac6",
+      "cardData": {
+          "kanji": "関心",
+          "reading": "かんしん",
+          "entrySeq": "1215870",
+          "kanjiOther": "",
+          "definitions": "1. concern;interest. noun (common) (futsuumeishi)",
+          "readingOther": "",
+          "exampleSentences": [
+              {
+                  "id": "930992ed-56b6-44e1-92b1-9184a88bf395",
+                  "eng": "I am deeply interested in art.",
+                  "jpn": "私は美術に非常な関心を抱いています。",
+                  "default_wordId": "00e4d9dd-1e6a-48b6-9121-504883312ac6",
+                  "default_word_wordForm": "関心"
+              }
+          ]
+      },
+      "knownLevel": 0,
+      "lastReviewed": null,
+      "timeDue": "2024-12-12T02:05:20.805Z",
+      "dateAdded": "2024-12-12T01:35:20.805Z"
+  },
+  {
+      "id": "8f7c2195-254f-457c-bfea-846c7ee3207b",
+      "accountId": "4130041f-cdd0-4ae3-9d06-aac61e45dc9d",
+      "wordId": "0393e466-7851-4b08-a22e-cd942758cbf2",
+      "cardData": {
+          "kanji": "地元",
+          "reading": "じもと",
+          "entrySeq": "1421060",
+          "kanjiOther": "",
+          "definitions": "1. home area;home town. noun (common) (futsuumeishi)\n2. local. nouns which may take the genitive case particle 'no'",
+          "readingOther": "",
+          "exampleSentences": [
+              {
+                  "id": "01204d19-adf3-470d-b21a-cbf163abe2b4",
+                  "eng": "The lady's funeral was held at the local church.",
+                  "jpn": "その婦人の葬式は地元の教会で行われた。",
+                  "default_wordId": "0393e466-7851-4b08-a22e-cd942758cbf2",
+                  "default_word_wordForm": "地元の"
+              },
+              {
+                  "id": "143cc3f6-ff02-4397-aa9f-7a8147fa025e",
+                  "eng": "These goods may not be available locally.",
+                  "jpn": "これらの商品の中には、地元では手に入らないものもあるかもしれない。",
+                  "default_wordId": "0393e466-7851-4b08-a22e-cd942758cbf2",
+                  "default_word_wordForm": "地元"
+              }
+          ]
+      },
+      "knownLevel": 0,
+      "lastReviewed": null,
+      "timeDue": "2024-12-12T02:05:39.798Z",
+      "dateAdded": "2024-12-12T01:35:39.798Z"
+  },
+  {
+      "id": "d20b220e-b933-4909-9e3b-5f821baca703",
+      "accountId": "4130041f-cdd0-4ae3-9d06-aac61e45dc9d",
+      "wordId": "01b81f44-78f0-4972-8838-a5bc90322f8d",
+      "cardData": {
+          "kanji": "工場",
+          "reading": "こうじょう",
+          "entrySeq": "1578700",
+          "kanjiOther": "",
+          "definitions": "1. factory;plant;mill;workshop. noun (common) (futsuumeishi)",
+          "readingOther": "こうば",
+          "exampleSentences": [
+              {
+                  "id": "e0f672fa-f13e-40ff-80ca-3b8a6cc2e1ca",
+                  "eng": "The factory manufactures toys.",
+                  "jpn": "その工場は玩具を製造している。",
+                  "default_wordId": "01b81f44-78f0-4972-8838-a5bc90322f8d",
+                  "default_word_wordForm": "工場"
+              }
+          ]
+      },
+      "knownLevel": 0,
+      "lastReviewed": null,
+      "timeDue": "2024-12-12T02:05:32.508Z",
+      "dateAdded": "2024-12-12T01:35:32.508Z"
+  },
+  {
+      "id": "d328632f-2a5c-40ad-bdcf-288f7d8be03e",
+      "accountId": "4130041f-cdd0-4ae3-9d06-aac61e45dc9d",
+      "wordId": "00a2eae8-c4a0-4b7e-aede-4fcf148814ea",
+      "cardData": {
+          "kanji": "目標",
+          "reading": "もくひょう",
+          "entrySeq": "1535650",
+          "kanjiOther": "",
+          "definitions": "1. goal;target;aim;objective. noun (common) (futsuumeishi)\n2. mark;sign;landmark. noun (common) (futsuumeishi)",
+          "readingOther": "",
+          "exampleSentences": [
+              {
+                  "id": "f19e2188-1ecb-4cb6-aa93-466f9471803c",
+                  "eng": "Sales fell short of their goal.",
+                  "jpn": "売れ行きは目標に達しなかった。",
+                  "default_wordId": "00a2eae8-c4a0-4b7e-aede-4fcf148814ea",
+                  "default_word_wordForm": "目標"
+              }
+          ]
+      },
+      "knownLevel": 0,
+      "lastReviewed": null,
+      "timeDue": "2024-12-12T02:05:13.875Z",
+      "dateAdded": "2024-12-12T01:35:13.875Z"
+  }
+]

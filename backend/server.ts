@@ -5,6 +5,7 @@ import morgan from 'morgan'
 import { objectEnumNames } from '@prisma/client/runtime/library';
 import { Account } from '../global';
 import { log } from 'console';
+import { equal } from 'assert';
 const prisma = new PrismaClient();
 const app = express()
 app.use(morgan('short'))
@@ -240,6 +241,8 @@ app.put('/api/changeWordKnownLevel', async (req, res) => {
   res.json(ret)
 })
 
+
+
 /**
  * return list of word information (including id and all that)
  * I also want it to return the known level of each word
@@ -422,6 +425,25 @@ app.get('/api/getNewWordsList', async (req, res) => {
   } else {
     return res.status(403).json({error: `strategy must be 'HIGHEST PRIO' or 'RANDOM'`})
   }
+})
+
+app.put('/api/updateNewWordsList', async (req, res) => {
+  const username = req.headers.username as string
+  const password = req.headers.password as string;
+  const foundAccnt = await loginAccount(username, password)
+  if (!foundAccnt) {
+    return res.status(403).json({error: 'invalid credentials'})
+  }
+  const wordIds = req.body.data.wordIds;
+  const ret = await prisma.newWordList.update({
+    where: {
+      accountId: foundAccnt.id
+    },
+    data: {
+      wordList: wordIds
+    }
+  })
+  res.json(ret)
 })
 
 app.get('/api/getWordKnownLevel', async(req, res) => {

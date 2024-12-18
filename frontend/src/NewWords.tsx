@@ -1,7 +1,7 @@
 import React, { createContext, ReactElement, useContext, useEffect, useState } from "react";
 import { AuthContext } from "./context/AuthContextProvider";
 import { Account, Card, ExampleSentence, TDeckInfo, Word } from "../../global";
-import { changeWordKnownLevel, createCard, deleteCard, getCard, getCardsForWord, getExampleSentencesForWord, getNewWordsList, getTDeckListForUser, getWord, getWordsInDeck, updateCard } from "./service/requestHelper";
+import { changeWordKnownLevel, createCard, deleteCard, getCard, getCardsForWord, getExampleSentencesForWord, getNewWordsList, getTDeckListForUser, getWord, getWordsInDeck, updateCard, updateNewWordsList } from "./service/requestHelper";
 import { Form, Link, Route, Routes, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { EditTextarea } from "react-edit-text";
 import { Updater, useImmer } from "use-immer";
@@ -406,9 +406,10 @@ function WordView({wIndex} : {wIndex: number}) {
   )
 }
 const WORDS_PER_PAGE = 10
-function SpecificDeck() {
+function SpecificDeck({currWordListR, updateCurrWordListR}: {currWordListR: CurrWordListR,updateCurrWordListR: Updater<CurrWordListR>}) {
   const { deckId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
+  const saveContext = useContext(SaveContext)
   const pageIdx = searchParams.get('pageIdx')
   const [words, setWords] = useState<Word[]>();
   const authContext = useContext(AuthContext);
@@ -463,6 +464,8 @@ function SpecificDeck() {
               }
             }
 
+            const inCurrList = currWordListR.this && (currWordListR.this.findIndex(clw => clw.id === w.id) !== -1)
+
             return (
               <div style={{border: '1px solid black', padding: '0.5em', color: kanjiColor, display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
                 <div style={{display: 'flex'}}>
@@ -474,7 +477,28 @@ function SpecificDeck() {
                     {def}
                   </div>
                 </div>
-                <button style={{}}>view cards (todo)</button>
+                <div>
+                  <button style={{marginRight: '1em', backgroundColor: inCurrList ? 'pink' : 'lightblue'}} onClick={() => {
+                    saveContext.upToDate = false;
+                    if (inCurrList) {
+                      // delete
+                      updateCurrWordListR(old => {
+                        old.this = old.this!.filter(clw => clw.id != w.id)
+                      })
+                    } else {
+                      // add
+                      updateCurrWordListR(old => {
+                        old.this!.push(structuredClone(w));
+                      })
+                    }
+                  }}>
+                    {
+                      inCurrList ? 'delete' : 'add'
+                    }
+                  </button>
+                  <button style={{}}>view cards (todo)</button>
+                </div>
+                
               </div>
             )
           })
@@ -484,12 +508,13 @@ function SpecificDeck() {
   )
 }
 
-function FromTargetDeck() {
+function FromTargetDeck({currWordListR, updateCurrWordListR}: {currWordListR: CurrWordListR, updateCurrWordListR: Updater<CurrWordListR>}) {
   const authContext = useContext(AuthContext)
   const acct = authContext.account!;
   const navigate = useNavigate();
+
   const [deckInfos, setDeckInfos] = useState<TDeckInfo[]>();
-  const [selectedDeckId, setSelectedDeckId] = useState<string>();
+  const [selectedDeckId, setSelectedDeckId] = useState<string | null>();
 
   useEffect(() => {
     async function mount() {
@@ -499,7 +524,7 @@ function FromTargetDeck() {
         return;
       }
       setDeckInfos(fetchedDeckInfos)
-      const selectedDeckId = fetchedDeckInfos[0].id;
+      const selectedDeckId = fetchedDeckInfos.length > 0 ? fetchedDeckInfos[0].id : null;
       setSelectedDeckId(selectedDeckId);
       navigate(`${selectedDeckId}?pageIdx=0`)
     }
@@ -510,24 +535,31 @@ function FromTargetDeck() {
   if (deckInfos) {
     content =
     <>
-      <div>select deck</div>
-      <div>
-      <select value={selectedDeckId} onChange={(e) => {
-        const deckId = e.target.value;
-        setSelectedDeckId(deckId)
-        navigate(`${deckId}?pageIdx=0`)
-      }}>
-        {deckInfos.map(di => {
-          return <option value={di.id}>
-            {di.name}
-          </option>
-        })}
-      </select>
-      </div>
-      
-      <Routes>
-        <Route path=":deckId/*" element={<SpecificDeck />}/>
-      </Routes>
+      {
+        deckInfos.length > 0 ?
+        <>
+          <div>select deck</div>
+          <div>
+          {/*deckInfos not null, has pos. length. So, selectedDeckId is defined*/}
+          <select value={selectedDeckId!} onChange={(e) => {
+            const deckId = e.target.value;
+            setSelectedDeckId(deckId)
+            navigate(`${deckId}?pageIdx=0`)
+          }}>
+            {deckInfos.map(di => {
+              return <option value={di.id}>
+                {di.name}
+              </option>
+            })}
+          </select>
+          </div>
+          <Routes>
+            <Route path=":deckId/*" element={<SpecificDeck currWordListR={currWordListR} updateCurrWordListR={updateCurrWordListR} />}/>
+          </Routes>
+        </>
+        :
+        <div>No target decks found</div>
+      }
     </>
   } else {
     content = <div>loading...</div>
@@ -540,29 +572,117 @@ function FromTargetDeck() {
   )
 }
 
+interface CurrWordListR {
+  this?: Word[]
+}
+
+interface SaveContextT {
+  upToDate: boolean
+}
+
+const SaveContext = createContext<SaveContextT>({
+  upToDate: true
+})
+
 function EditWordList() {
-  const [currWordList, setCurrWordList] = useState<Word[]>([]);
+  const authContext = useContext(AuthContext)
+  const timeContext = useContext(TimeContext)
+  const saveContext = useContext(SaveContext)
+  const pageContext = useContext(PageContext);
+  const pageState = pageContext.pageState;
+  const updatePageState = pageContext.updatePageState
+
+  const acct = authContext.account!
+  const [currWordListR, updateCurrWordListR] = useImmer<CurrWordListR>({});
   const navigate = useNavigate();
+
+  useEffect(() => {
+    async function mount() {
+      const fetchedWords = await getNewWordsList(acct.username, acct.password, 'HIGHEST PRIO', timeContext.getCurrentTimestamp());
+      if ('error' in fetchedWords) {
+        window.alert('couldnt fetch new word list');
+        return;
+      }
+      updateCurrWordListR(old => {
+        old.this = fetchedWords
+      })
+    }
+    mount();
+  }, []);
+
+  const currWordList = currWordListR.this;
+  const change = pageState.words && currWordList && JSON.stringify(pageState.words.map(w => w.wordId).sort()) != JSON.stringify(currWordList.map(w => w.id).sort())
+
   return (
-    <Modal show animation={false} size="xl">
-      <h1>edit words</h1>
+    <Modal show animation={false} size="xl" onHide={() => {
+      if (change) {
+        if (window.confirm('unsaved changes detected. Are you sure you wan\'t to exit?')) {
+          navigate('/new-words')
+        }
+      } else {
+        navigate('/new-words')
+      }
+    }}>
+      <Modal.Header closeButton>
+        <h1>edit word list</h1>
+      </Modal.Header>
       <div style={{border: '1px solid red', minHeight: '70vh', padding: '0.5em'}}>
-        <h3>add words</h3>
-        <div>add from</div>
+        <div>select word source</div>
         <div>
           <button onClick={() => navigate('fromTargetDeck')}>target deck</button>
           <button onClick={() => navigate('fromCustom')}>custom selection</button>
         </div>
         <div style={{border: '1px solid black', minHeight: '30vh', padding: '0.5em'}}>
           <Routes>
-            <Route path="fromTargetDeck/*" element={<FromTargetDeck />} />
-            <Route path="fromCustom/*" />
+            <Route path="fromTargetDeck/*" element={<FromTargetDeck currWordListR={currWordListR} updateCurrWordListR={updateCurrWordListR}/>} />
+            <Route path="fromCustom/*" element={<div>TODO</div>} />
           </Routes>
         </div>
         <h3>current word list</h3>
-        {currWordList.map(w => {
-          return <div>{w.kanji}</div>
-        })}
+        <div style={{border: '1px solid black', padding: '0.5em', display: 'flex'}}>
+          {
+            currWordList ?
+              currWordList.length > 0 ?
+              currWordList.map(w => {
+                return (
+                  <div style={{border: '1px solid black', marginRight: '1em', backgroundColor: 'whitesmoke', position: 'relative'}}>
+                    {w.kanji}
+                  </div>
+                )
+                
+              })
+              :
+              <div> no words</div>
+            :
+            <div>loading...</div>
+          }
+        </div>
+        <button onClick={async () => {
+          if (currWordList) {
+            const res = await updateNewWordsList(acct.username, acct.password, currWordList.map(w => w.id))
+            if ('error' in res) {
+              window.alert('couldn\'t update new words list')
+              return;
+            }
+            // update wordViews
+            const newWordViews: WordView[] = currWordList.map(w => {
+              return {
+                wordId: w.id,
+                kanji: w.kanji,
+                knownLevel: w.knownLevel,
+                onPage: false,
+              }
+            })
+            if (newWordViews.length > 0) {
+              newWordViews[0].onPage = true;
+            }
+            updatePageState(old => {
+              old.words = newWordViews
+            })
+            window.alert('changes saved')
+            // saveContext.upToDate = true
+          }
+        }}>save</button>
       </div>
       
     </Modal>
@@ -577,6 +697,8 @@ export function NewWords() {
   const pageContext = useContext(PageContext);
   const pageState = pageContext.pageState;
   const updatePageState = pageContext.updatePageState;
+
+  const navigate = useNavigate()
 
   useEffect(() => {
     // update wordViews after getting new words
@@ -600,7 +722,9 @@ export function NewWords() {
             knownLevel: w.knownLevel,
           }
         })
-        wordViews[0].onPage = true
+        if (wordViews.length > 0) {
+          wordViews[0].onPage = true
+        }
         old.words = wordViews;
       })
     }
@@ -611,11 +735,6 @@ export function NewWords() {
   let toDisplay;
   if (wordViews) {
     const shownwIdx = wordViews.findIndex(wv => wv.onPage);
-    // if (shownwIdx == -1) {
-    //   toDisplay = <div>xxx</div>
-    //   return toDisplay;
-    // }
-
     toDisplay = 
     <>
       <Routes>
@@ -626,12 +745,12 @@ export function NewWords() {
       <div>this list refreshes every day. Click the edit button on the left to edit this list</div>
       <div style={{display: 'flex', minHeight: '90vh', border: '1px solid red'}}>
         {/* left column to the words */}
-        <div style={{display: 'flex', alignItems: 'center', flexDirection: 'column', border: '1px solid black', minWidth: '5em', margin: '1em'}}>
-          <div style={{textWrap: 'nowrap'}}>
-            key:
-            <div>✔: known</div>
-            <div>🎯: daily</div>
+        <div style={{display: 'flex', alignItems: 'center', flexDirection: 'column', border: '1px solid black', minWidth: '8em', margin: '1em', padding: '1em'}}>
+          <div style={{border: '1px solid black', textWrap: 'nowrap', marginBottom: '1em', padding: '0.5em'}}>
+            <div>✔: known word</div>
+            <div>🎯: daily word</div>
           </div>
+          <button style={{textWrap: 'nowrap'}} onClick={() => navigate('edit')}>edit list ✎</button>
           {
             wordViews.length > 0 ?
             wordViews.map((wv, i) => {
@@ -666,7 +785,12 @@ export function NewWords() {
         </div>
         {/* word display*/}
         <div style={{border: '1px solid black', width: '100%', margin: '1em', padding: '1em'}}>
-          <WordView wIndex={shownwIdx}/>
+          {
+            shownwIdx != -1 ?
+            <WordView wIndex={shownwIdx}/>
+            :
+            <div>no word selected</div>
+          }
         </div>
       </div>
     </>

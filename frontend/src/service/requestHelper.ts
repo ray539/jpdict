@@ -176,6 +176,25 @@ export async function getNewWordsList(username: string, password: string, strate
   }
 }
 
+export async function updateNewWordsList(username: string, password: string, wordIds: string[]) {
+  try {
+    // console.log(username, password, strategy, timestamp);
+    
+    const res = await axios.put(`${BASEURL}/api/updateNewWordsList`, {
+      headers: {
+        username: username,
+        password: password
+      },
+      data: {
+        wordIds: wordIds
+      }
+    })
+    return res.data as any;
+  } catch (e) {
+    return extractError(e)
+  }
+}
+
 export async function getWordKnownLevel(username: string, password: string, wordId: string) {
   try {
     const res = await axios.get(`${BASEURL}/api/getWordKnownLevel`, {

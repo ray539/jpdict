@@ -35,7 +35,7 @@ function Dashboard() {
       <div>you haven't completed your daily goal of 10 new words yet</div>
       <div>
         <Link to="/new-words">
-          <button>learn daily new words</button>
+          <button>learn new words</button>
         </Link>
       </div>
       <div>

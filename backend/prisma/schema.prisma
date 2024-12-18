@@ -79,7 +79,7 @@ model NewWordList {
   account Account @relation(fields: [accountId], references: [id])
   accountId String @unique
   date DateTime
-  wordList Json // contains DATA (not just ids) of the new words of the day
+  wordList Json // contains ids of the new words of the day. (word info can change throughout the day)
 }
 
 model BelongsToWordDeck {

@@ -34,13 +34,14 @@ export interface Definition {
 
 export interface Word {
   id: string
-  seqNum: number
+  seqNum?: number
   entrySeq: string
   kanji: string
   kanjiOther: [string]
   reading: string
   readingOther: [string]
   definitions: [Definition]
+  knownLevel: number
 }
 
 export interface ExampleSentence {

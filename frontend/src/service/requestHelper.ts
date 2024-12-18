@@ -83,18 +83,19 @@ export async function changeWordKnownLevel(username: string, password: string, w
   }
 }
 
-export async function getWordsInDeck(username: string, password: string, deckId: string) {
+export async function getWordsInDeck(username: string, password: string, deckId: string, skip: number, take: number) {
   try {
     const res = await axios.get(`${BASEURL}/api/getWordsInDeck`, 
       {
       params: {
-        deckId: deckId
+        deckId: deckId,
+        skip: skip,
+        take: take
       },
       headers: {
         username: username,
         password: password,
       },
-      
     })
     return res.data as Word[];
   } catch (e) {
@@ -125,6 +126,12 @@ export async function getWord(username: string, password: string, wordId: string
   }
 }
 
+function fixDatesOnCard(card: Card) {
+  card.lastReviewed = card.lastReviewed ? new Date(card.lastReviewed) : null;
+  card.timeDue = new Date(card.timeDue)
+  return card;
+}
+
 export async function getCard(username: string, password: string, cardId: string) {
   try {
     const res = await axios.get(`${BASEURL}/api/getCard`, 
@@ -138,7 +145,8 @@ export async function getCard(username: string, password: string, cardId: string
       },
     })
     if (res.data) {
-      return res.data as Card;
+      const ret = fixDatesOnCard(res.data);
+      return ret;
     } else {
       return {error: 'card not found'}
     }
@@ -213,7 +221,7 @@ export async function getCardsForWord(username: string, password: string, wordId
         wordId: wordId
       }
     })
-    return res.data as Card[];
+    return (res.data as Card[]).map(c => fixDatesOnCard(c));
   } catch (e) {
     return extractError(e)
   }
@@ -228,7 +236,7 @@ export async function createCard(username: string, password: string, card: Card)
       },
       data: card
     })
-    return res.data as Card;
+    return fixDatesOnCard(res.data);
   } catch (e) {
     return extractError(e)
   }
@@ -246,7 +254,7 @@ export async function updateCard(username: string, password: string, cardId: str
         newCard: newCard
       }
     })
-    return res.data as Card;
+    return fixDatesOnCard(res.data);
   } catch (e) {
     return extractError(e)
   }
@@ -263,7 +271,7 @@ export async function deleteCard(username: string, password: string, cardId: str
         cardId: cardId,
       }
     })
-    return res.data as Card;
+    return fixDatesOnCard(res.data);
   } catch (e) {
     return extractError(e)
   }
@@ -325,7 +333,9 @@ export async function getDueCards(username: string, password: string, timestamp:
         limit: limit
       }
     })
-    return res.data as Card[];
+
+    const ret = (res.data as Card[]).map((c: Card) => fixDatesOnCard(c));
+    return ret;
   } catch (e) {
     return extractError(e)
   }

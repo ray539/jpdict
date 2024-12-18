@@ -2,6 +2,9 @@ import express from 'express'
 import { Prisma, PrismaClient } from "@prisma/client";
 import 'express-async-errors'
 import morgan from 'morgan'
+import { objectEnumNames } from '@prisma/client/runtime/library';
+import { Account } from '../global';
+import { log } from 'console';
 const prisma = new PrismaClient();
 const app = express()
 app.use(morgan('short'))
@@ -73,7 +76,7 @@ app.post('/api/register', async (req, res) => {
   })
 
   // create the initial deck for the account
-  const fst30Words = (await prisma.word.findMany({take: 30})).map(word => word.id);
+  const fst30Words = (await prisma.word.findMany({take: 100})).map(word => word.id);
   await createDeck(newAccount.id, 'initialDeck', 1, fst30Words)
   return res.json(newAccount);
 })
@@ -97,6 +100,8 @@ app.get('/api/getTDeckListForUser', async(req, res) => {
   // targetDeck:
   //   totalWords
   //   knownWords
+  // NOTE: we cannot have multiple count fields
+  // https://github.com/prisma/prisma/discussions/17676
   const decks1 = await prisma.wordDeck.findMany({
     where: {
       accountId: foundAccnt.id
@@ -107,41 +112,77 @@ app.get('/api/getTDeckListForUser', async(req, res) => {
       _count: {
         select: {
           words: true
-        }
+        },
       }
     }
   })
 
-  const decks2 = await Promise.all(decks1.map(async (obj) => {
-    const deckId = obj.id
-    // get all words in the deck with known level which is not new
-    const knownWords = await prisma.belongsToWordDeck.findMany({
-      where: {
-        wordDeckId: deckId,
-        word: {
-          knownByAccount: {
-            some: {
-              accountId: {
-                equals: foundAccnt.id,
-              },
-              knownLevel: {
-                in: ['1', '2', '3', '4', '5']
+  const decks2 = await prisma.wordDeck.findMany({
+    where: {
+      accountId: foundAccnt.id
+    },
+    select: {
+      id: true,
+      name: true,
+      _count: {
+        select: {
+          words: {
+            where: {
+              word: {
+                knownByAccount: {
+                  some: {
+                    knownLevel: {
+                      notIn: ["0"]
+                    }
+                  }
+                }
               }
             }
           }
-        }  
-      },
-    })
-
-    return {
-      id: obj.id,
-      name: obj.name,
-      totalWords: obj._count.words,
-      knownWords: knownWords.length
+        },
+      }
     }
-  }))
+  })
 
-  res.json(decks2)
+  const deckList = decks1.map((o, i) => {
+    return {
+      id: o.id,
+      name: o.name,
+      totalWords: o._count.words,
+      knownWords: decks2[i]._count.words
+    }
+  })
+
+  // const decks2 = await Promise.all(decks1.map(async (obj) => {
+  //   const deckId = obj.id
+  //   // get all words in the deck with known level which is not new
+  //   const knownWords = await prisma.belongsToWordDeck.findMany({
+  //     where: {
+  //       wordDeckId: deckId,
+  //       word: {
+  //         knownByAccount: {
+  //           some: {
+  //             accountId: {
+  //               equals: foundAccnt.id,
+  //             },
+  //             knownLevel: {
+  //               in: ['1', '2', '3', '4', '5']
+  //             }
+  //           }
+  //         }
+  //       }  
+  //     },
+  //   })
+
+  //   return {
+  //     id: obj.id,
+  //     name: obj.name,
+  //     totalWords: obj._count.words,
+  //     knownWords: knownWords.length
+  //   }
+  // }))
+
+  res.json(deckList)
 })
 
 app.put('/api/changeWordKnownLevel', async (req, res) => {
@@ -157,7 +198,6 @@ app.put('/api/changeWordKnownLevel', async (req, res) => {
   console.log(wordId);
   console.log(knownLevel);
   
-  
   const found = await prisma.word.findFirst({where: {id: wordId}})
   console.log(found);
   
@@ -166,9 +206,21 @@ app.put('/api/changeWordKnownLevel', async (req, res) => {
   }
   
 
-  if (!['0', '1', '2', '3', '4', '5'].includes(knownLevel)) {
+  if (!['null', '0', '1', '2', '3', '4', '5'].includes(knownLevel)) {
     return res.status(403).json({error: 'invalid known level'})
   }
+
+  if (knownLevel == 'null') {
+    console.log('here');
+    const ret = await prisma.wordKnownLevel.deleteMany({
+      where: {
+        accountId: foundAccnt.id,
+        wordId: wordId
+      }
+    })
+    return res.json(ret)
+  }
+
   const ret = await prisma.wordKnownLevel.upsert({
     where: {
       accountId_wordId: {
@@ -190,6 +242,7 @@ app.put('/api/changeWordKnownLevel', async (req, res) => {
 
 /**
  * return list of word information (including id and all that)
+ * I also want it to return the known level of each word
  */
 app.get('/api/getWordsInDeck', async(req, res) => {
   const username = req.headers.username as string
@@ -199,9 +252,11 @@ app.get('/api/getWordsInDeck', async(req, res) => {
     return res.status(403).json({error: 'invalid credentials'})
   }
   const deckId = req.query.deckId as string
-  console.log(username, password, deckId);
-  
 
+  const skip = Number(req.query.skip)
+  const take = Number(req.query.take);
+
+  console.log(username, password, deckId);
   const words_ = await prisma.wordDeck.findUnique({
     where: {
       id: deckId,
@@ -210,18 +265,73 @@ app.get('/api/getWordsInDeck', async(req, res) => {
     select: {
       words: {
         select: {
-          word: true
-        }
+          word: {
+            include: {
+              knownByAccount: {
+                where: {
+                  accountId: foundAccnt.id
+                },
+                select: {
+                  knownLevel: true
+                }
+              }
+            }
+          },
+          seqNum: true,
+        },
+        orderBy: {
+          seqNum: 'asc'
+        },
+        skip: skip,
+        take: take
       }
     }
   })
   if (!words_) {
     return res.status(403).json({error: 'deck not found'})
   }
-
-  const words = words_.words.map(obj => obj.word);
+  const words = words_.words.map(obj => {
+    let retObj = {...obj.word, 
+      seqNum: obj.seqNum,
+      knownLevel: obj.word.knownByAccount.length > 0 ? obj.word.knownByAccount[0].knownLevel : undefined   
+    }
+    delete (retObj as any).knownByAccount;
+    return retObj
+  });
   return res.json(words)
 })
+
+
+async function wordIdsToWords(wordIds: string[], account: any) {
+  const words_ = await prisma.word.findMany({
+    where: {
+      id: {
+        in: wordIds
+      }
+    },
+    include: {
+      knownByAccount: {
+        where: {
+          accountId: {
+            equals: account.id
+          }
+        },
+        select: {
+          knownLevel: true
+        }
+      }
+    }
+  })
+  const words = words_.map(w => {
+    let retObj = {
+      ...w,
+      knownLevel: w.knownByAccount.length > 0 ? w.knownByAccount[0].knownLevel : undefined 
+    }
+    delete (w as any).knownByAccount;
+    return retObj
+  })
+  return words
+}
 
 /**
  * body: {
@@ -247,17 +357,19 @@ app.get('/api/getNewWordsList', async (req, res) => {
   const now = new Date(timestamp)
 
   // find the existing new word list entry
-  // const newWordList = await prisma.newWordList.findUnique({where: {
-  //   accountId: foundAccnt.id
-  // }})
+  const newWordList = await prisma.newWordList.findUnique({where: {
+    accountId: foundAccnt.id
+  }})
 
   const DAY_LENGTH = 24 * 3600 * 1000
   const NUM_NEW_WORDS = 10
 
-  // if (newWordList && now.getTime() - newWordList.date.getTime() <= DAY_LENGTH) {
-  //   console.log('return cached');
-  //   return res.json(newWordList.wordList)
-  // }
+  if (newWordList && now.getTime() - newWordList.date.getTime() <= DAY_LENGTH) {
+    console.log('return cached');
+    const newWordIds = newWordList.wordList as string[];
+    const cachedWords = await wordIdsToWords(newWordIds, foundAccnt);
+    return res.json(cachedWords)
+  }
 
   // x is null, or it is too late
   if (strategy == 'HIGHEST PRIO') {
@@ -283,30 +395,27 @@ app.get('/api/getNewWordsList', async (req, res) => {
         wordDeckId: deck.id
       },
       select: {
-        seqNum: true,
-        word: true
+        wordId: true
+      },
+      orderBy: {
+        seqNum: 'asc'
       },
       take: NUM_NEW_WORDS
     })
-    const words = words_.map(w => {
-      let w2 = {...w.word, seqNum: w.seqNum}
-      return w2
+    const wordIds = words_.map(obj => obj.wordId);
+    await prisma.newWordList.deleteMany({
+      where: {
+        accountId: foundAccnt.id
+      }
     })
-    
-    // await prisma.newWordList.deleteMany({
-    //   where: {
-    //     accountId: foundAccnt.id
-    //   }
-    // })
-
-    // await prisma.newWordList.create({
-    //   data: {
-    //     accountId: foundAccnt.id,        
-    //     date: now,
-    //     wordList: (words as Prisma.JsonArray)
-    //   }
-    // })
-
+    await prisma.newWordList.create({
+      data: {
+        accountId: foundAccnt.id,        
+        date: now,
+        wordList: wordIds
+      }
+    })
+    const words = await wordIdsToWords(wordIds, foundAccnt);
     res.json(words)
   } else if (strategy == 'RANDOM') {
     res.status(403).json({error: 'TODO'})
@@ -371,9 +480,27 @@ app.get('/api/getWord', async(req, res) => {
   const word = await prisma.word.findFirst({
     where: {
       id: wordId
+    },
+    include: {
+      knownByAccount: {
+        where: {
+          accountId: foundAccnt.id
+        },
+        select: {
+          knownLevel: true
+        }
+      }
     }
   })
-  res.json(word)
+  if (!word) {
+    return res.status(403).json({error: 'word not found'})
+  }
+  
+  let retObj = {...word,
+    knownLevel: word.knownByAccount.length > 0 ? word.knownByAccount[0].knownLevel : undefined   
+  }
+  delete (retObj as any).knownByAccount;
+  res.json(retObj)
 });
 
 app.get('/api/getCard', async(req, res) => {

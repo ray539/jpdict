@@ -1,13 +1,14 @@
 import React, { createContext, ReactElement, useContext, useEffect, useState } from "react";
 import { AuthContext } from "./context/AuthContextProvider";
-import { Account, Card, ExampleSentence, Word } from "../../global";
-import { createCard, deleteCard, getCard, getCardsForWord, getExampleSentencesForWord, getNewWordsList, getWord, updateCard } from "./service/requestHelper";
-import { Link, Route, Routes, useNavigate, useParams } from "react-router-dom";
+import { Account, Card, ExampleSentence, TDeckInfo, Word } from "../../global";
+import { changeWordKnownLevel, createCard, deleteCard, getCard, getCardsForWord, getExampleSentencesForWord, getNewWordsList, getTDeckListForUser, getWord, getWordsInDeck, updateCard } from "./service/requestHelper";
+import { Form, Link, Route, Routes, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { EditTextarea } from "react-edit-text";
 import { Updater, useImmer } from "use-immer";
-import { Button } from "react-bootstrap";
+import { Button, Modal } from "react-bootstrap";
 import { v4 as uuidv4 } from 'uuid';
-import { getCurrTimestamp } from "./time";
+import { TimeContext } from "./context/TimeContextProvider";
+import BForm from 'react-bootstrap/Form'
 
 interface CardView {
   cardId: string
@@ -19,6 +20,7 @@ interface WordView {
   kanji: string
   wordId: string
   onPage: boolean
+  knownLevel: number | null
   cards?: CardView[]
 }
 
@@ -48,8 +50,8 @@ function PageContextProvider({children}: {children: ReactElement}) {
   )
 }
 
-async function getCardFromWord(word: Word, acct: Account) {
-  const currTimestamp = getCurrTimestamp();
+async function getCardFromWord(word: Word, acct: Account, timestamp: number) {
+  const currTimestamp = timestamp;
   const newCard : Card = {
     id: 'new',
     accountId: acct.id,
@@ -104,7 +106,7 @@ async function getAndDisplayCardsForWord(pageState: PageState, updatePageState: 
   }
 }
 
-async function getAndDisplayCard(pageState: PageState, updatePageState: Updater<PageState>, acct: Account, wIndex: number, cIndex: number) {
+async function getAndDisplayCard(pageState: PageState, updatePageState: Updater<PageState>, acct: Account, wIndex: number, cIndex: number, timestamp: number) {
   const wordView = pageState.words![wIndex];
   const cardView = pageState.words![wIndex].cards![cIndex];
   if (cardView.cardId == "new") {
@@ -113,7 +115,7 @@ async function getAndDisplayCard(pageState: PageState, updatePageState: Updater<
     if ('error' in word) {
       return;
     }
-    const newCard = await getCardFromWord(word, acct);
+    const newCard = await getCardFromWord(word, acct, timestamp);
     updatePageState(old => {
       old.words![wIndex].cards![cIndex].card = newCard;
     });
@@ -132,6 +134,7 @@ function CardView({wIndex, cIndex} : {wIndex: number, cIndex: number}) {
   const authContext = useContext(AuthContext)
   const acct = authContext.account as Account;
   const pageContext = useContext(PageContext);
+  const timeContext = useContext(TimeContext)
   const pageState = pageContext.pageState;
   const updatePageState = pageContext.updatePageState;
 
@@ -144,7 +147,7 @@ function CardView({wIndex, cIndex} : {wIndex: number, cIndex: number}) {
         // system already knows card, don't do anything
         return;
       }
-      await getAndDisplayCard(pageState, updatePageState, acct, wIndex, cIndex)
+      await getAndDisplayCard(pageState, updatePageState, acct, wIndex, cIndex, timeContext.getCurrentTimestamp())
     }
     mount();
   }, [pageState])
@@ -157,7 +160,7 @@ function CardView({wIndex, cIndex} : {wIndex: number, cIndex: number}) {
     card ?
       <>
         <div> cardID: {card.id}</div>
-        <div> dateAdded: {card.dateAdded.toString()} </div>
+        <div> dateAdded: {(new Date(card.dateAdded)).toLocaleString()} </div>
         <h1 style={{fontSize: 50}}> {card!.cardData.kanji}</h1>
         <div>
           reading: 
@@ -272,14 +275,24 @@ function CardView({wIndex, cIndex} : {wIndex: number, cIndex: number}) {
           // [create new card]
           <button style={{backgroundColor: 'lightblue', fontSize: '20px'}} onClick={async () => {
             updatePageState(old => {
-              old.words![wIndex].cards![cIndex].card!.dateAdded = new Date(getCurrTimestamp());
+              old.words![wIndex].cards![cIndex].card!.dateAdded = new Date(timeContext.getCurrentTimestamp());
             })
             let card = pageState.words![wIndex].cards![cIndex]!.card!;
             const res = await createCard(acct.username, acct.password, card);
             console.log('created card:');
             console.log(res);
+
+            if (!wordView.knownLevel) {
+              // update known level of word, if it is not already known
+              await changeWordKnownLevel(acct.username, acct.password, wordView.wordId, '0')
+              updatePageState(old => {
+                old.words![wIndex].knownLevel = 0
+              })
+            }
+
+
             // reset page state
-            getAndDisplayCardsForWord(pageState, updatePageState, acct, wIndex);
+            await getAndDisplayCardsForWord(pageState, updatePageState, acct, wIndex);
           }}>
             create new card
           </button>
@@ -298,9 +311,16 @@ function CardView({wIndex, cIndex} : {wIndex: number, cIndex: number}) {
                 const cardId = cardView.cardId;
                 const res = await deleteCard(acct.username, acct.password, cardId);
                 console.log(res);
+                if (wordView.cards!.length == 2) {
+                  if (window.confirm('you just deleted all your cards for this word. Mark word as unknown?')) {
+                    const res = await changeWordKnownLevel(acct.username, acct.password, wordView.wordId, 'null')
+                    updatePageState(old => {
+                      old.words![wIndex].knownLevel = null
+                    })
+                  }
+                }
                 getAndDisplayCardsForWord(pageState, updatePageState, acct, wIndex)
               }
-
             }}>
               delete card
             </button>
@@ -344,7 +364,7 @@ function WordView({wIndex} : {wIndex: number}) {
         ? 
         <div>You already have cards for this word. Select 'new' to create another one</div>
         :
-        <div>This is a new word. Select 'create new card' once you have finished learning it. You may also edit the card.</div>
+        <div>You have no cards for this word. Select 'create new card' once you have finished learning it. You may also edit the card.</div>
       }
       <div style={{display: 'flex', alignItems: 'center', border: '1px solid black'}}>
         {
@@ -385,10 +405,174 @@ function WordView({wIndex} : {wIndex: number}) {
     toDisplay
   )
 }
+const WORDS_PER_PAGE = 10
+function SpecificDeck() {
+  const { deckId } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const pageIdx = searchParams.get('pageIdx')
+  const [words, setWords] = useState<Word[]>();
+  const authContext = useContext(AuthContext);
+  const acct = authContext.account!;
+
+  useEffect(() => {
+    async function fetchAndSetWords() {
+      const fetchedWords = await getWordsInDeck(acct.username, acct.password, deckId!, Number(pageIdx) * WORDS_PER_PAGE, WORDS_PER_PAGE);
+      if ('error' in fetchedWords) {
+        window.alert('couldn\'t fetch words')
+        return;
+      }
+      console.log(fetchedWords);
+      setWords(fetchedWords)
+    }
+    fetchAndSetWords();
+  }, [searchParams])
+
+  return (
+    words ?
+      <>
+        <div>
+          <button disabled={Number(pageIdx) == 0} onClick={() => {
+            setSearchParams(old => {
+              old.set('pageIdx', (Math.max(Number(old.get('pageIdx')) - 1, 0)).toString());               
+              return old
+            });
+          }}>
+            prev page
+          </button>
+          <button onClick={() => {
+            setSearchParams(old => {
+              old.set('pageIdx', (Number(old.get('pageIdx')) + 1).toString());               
+              return old
+            });
+          }}>
+            next page
+          </button>
+        </div>
+        
+        {
+          words.map(w => {
+            let kanjiColor = 'black';
+            let def = '';
+            if (w.knownLevel) {
+              if (w.knownLevel == 0) {
+                kanjiColor = 'blue'
+                def = '(known level 0, new)'
+              } else {
+                kanjiColor = 'forestgreen'
+                def = `(known level ${w.knownLevel})`
+              }
+            }
+
+            return (
+              <div style={{border: '1px solid black', padding: '0.5em', color: kanjiColor, display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+                <div style={{display: 'flex'}}>
+                  <div style={{border: '1px solid black', padding: '0.1em'}}> {w.seqNum}</div>
+                  <div style={{border: '1px solid black', fontSize: '20px', marginLeft: '1em', backgroundColor: 'whitesmoke'}}>
+                    {w.kanji}
+                  </div>
+                  <div style={{marginLeft: '1em'}}>
+                    {def}
+                  </div>
+                </div>
+                <button style={{}}>view cards (todo)</button>
+              </div>
+            )
+          })
+        }
+      </>
+    : <div>loading...</div>
+  )
+}
+
+function FromTargetDeck() {
+  const authContext = useContext(AuthContext)
+  const acct = authContext.account!;
+  const navigate = useNavigate();
+  const [deckInfos, setDeckInfos] = useState<TDeckInfo[]>();
+  const [selectedDeckId, setSelectedDeckId] = useState<string>();
+
+  useEffect(() => {
+    async function mount() {
+      const fetchedDeckInfos = await getTDeckListForUser(acct.username, acct.password);
+      if ('error' in fetchedDeckInfos) {
+        window.alert('couldnt fetch decks')
+        return;
+      }
+      setDeckInfos(fetchedDeckInfos)
+      const selectedDeckId = fetchedDeckInfos[0].id;
+      setSelectedDeckId(selectedDeckId);
+      navigate(`${selectedDeckId}?pageIdx=0`)
+    }
+    mount();
+  }, []);
+
+  let content = <></>
+  if (deckInfos) {
+    content =
+    <>
+      <div>select deck</div>
+      <div>
+      <select value={selectedDeckId} onChange={(e) => {
+        const deckId = e.target.value;
+        setSelectedDeckId(deckId)
+        navigate(`${deckId}?pageIdx=0`)
+      }}>
+        {deckInfos.map(di => {
+          return <option value={di.id}>
+            {di.name}
+          </option>
+        })}
+      </select>
+      </div>
+      
+      <Routes>
+        <Route path=":deckId/*" element={<SpecificDeck />}/>
+      </Routes>
+    </>
+  } else {
+    content = <div>loading...</div>
+  }
+
+  return (
+    <>
+      {content}
+    </>
+  )
+}
+
+function EditWordList() {
+  const [currWordList, setCurrWordList] = useState<Word[]>([]);
+  const navigate = useNavigate();
+  return (
+    <Modal show animation={false} size="xl">
+      <h1>edit words</h1>
+      <div style={{border: '1px solid red', minHeight: '70vh', padding: '0.5em'}}>
+        <h3>add words</h3>
+        <div>add from</div>
+        <div>
+          <button onClick={() => navigate('fromTargetDeck')}>target deck</button>
+          <button onClick={() => navigate('fromCustom')}>custom selection</button>
+        </div>
+        <div style={{border: '1px solid black', minHeight: '30vh', padding: '0.5em'}}>
+          <Routes>
+            <Route path="fromTargetDeck/*" element={<FromTargetDeck />} />
+            <Route path="fromCustom/*" />
+          </Routes>
+        </div>
+        <h3>current word list</h3>
+        {currWordList.map(w => {
+          return <div>{w.kanji}</div>
+        })}
+      </div>
+      
+    </Modal>
+  )
+}
 
 export function NewWords() {
   const authContext = useContext(AuthContext)
   const acct = authContext.account as Account;
+  const timeContext = useContext(TimeContext)
 
   const pageContext = useContext(PageContext);
   const pageState = pageContext.pageState;
@@ -401,8 +585,7 @@ export function NewWords() {
         // system already knows words, don't do anything
         return;
       }
-
-      const fetchedWords = await getNewWordsList(acct.username, acct.password, 'HIGHEST PRIO', Date.now());
+      const fetchedWords = await getNewWordsList(acct.username, acct.password, 'HIGHEST PRIO', timeContext.getCurrentTimestamp());
       // console.log(words);
       if ('error' in fetchedWords) {
         window.alert(fetchedWords.error);
@@ -413,7 +596,8 @@ export function NewWords() {
           return {
             kanji: w.kanji,
             wordId: w.id,
-            onPage: false
+            onPage: false,
+            knownLevel: w.knownLevel,
           }
         })
         wordViews[0].onPage = true
@@ -434,10 +618,20 @@ export function NewWords() {
 
     toDisplay = 
     <>
+      <Routes>
+        <Route path="edit/*" element={<EditWordList />} />
+      </Routes>
+      
       <h1>learn new words</h1>
+      <div>this list refreshes every day. Click the edit button on the left to edit this list</div>
       <div style={{display: 'flex', minHeight: '90vh', border: '1px solid red'}}>
-        {/* links to the words */}
+        {/* left column to the words */}
         <div style={{display: 'flex', alignItems: 'center', flexDirection: 'column', border: '1px solid black', minWidth: '5em', margin: '1em'}}>
+          <div style={{textWrap: 'nowrap'}}>
+            key:
+            <div>✔: known</div>
+            <div>🎯: daily</div>
+          </div>
           {
             wordViews.length > 0 ?
             wordViews.map((wv, i) => {
@@ -448,6 +642,7 @@ export function NewWords() {
                   style = {border: '1px solid black', paddingLeft: '0.5em', paddingRight: '0.5em', margin: '1em', backgroundColor: 'whitesmoke', textWrap: 'nowrap'}
                 }
                 return (
+                  <>
                   <div key={wv.kanji} style={style} onClick={(e) => {
                     updatePageState(old => {
                       for (let j = 0; j < old.words!.length; j++) {
@@ -460,7 +655,9 @@ export function NewWords() {
                     })
                   }}>
                     {wv.kanji}
+                    {wv.knownLevel != null ? "✔" : ''}
                   </div>
+                  </>
                 )
               })
             :
@@ -476,7 +673,6 @@ export function NewWords() {
   } else {
     toDisplay = <div>loading...</div>
   }
-  
   return (
     toDisplay
   )

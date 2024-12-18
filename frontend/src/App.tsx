@@ -8,11 +8,16 @@ import { getCardsForWord, getExampleSentencesForWord } from './service/requestHe
 import { A } from './A';
 import { NewWords, NewWords_ } from './NewWords';
 import { ReviewCards, ReviewCards_ } from './ReviewCards';
+import TimeContextProvider, { TimeContext } from './context/TimeContextProvider';
+import { Dashboard_ } from './DashBoard';
+import { BrowseDeck_ } from './BrowseDeck';
 // DEBUG
 // import { increment_days, increment_hours, now_ } from './stubDate';
 
 function Links() {
   const authContext = useContext(AuthContext)
+  const timeContext = useContext(TimeContext)
+
   const navigate = useNavigate();
   const loggedIn_page =     
   <>
@@ -47,7 +52,19 @@ function Links() {
   </>
 
   return (
-    authContext.account ? loggedIn_page : notloggedIn_page
+    <>
+      
+      <div style={{border: '1px solid blue', padding: '0.5em', marginBottom: '1em'}}>
+        DEBUG
+        <div>curr time: {new Date(timeContext.getCurrentTimestamp()).toLocaleString()}</div>
+        <button onClick={() => {timeContext.setTimeStamp(timeContext.getCurrentTimestamp() + 3600 * 1000)}}>inc hour</button>
+        <button onClick={() => {timeContext.setTimeStamp(timeContext.getCurrentTimestamp() + 24 * 3600 * 1000)}}>inc day</button>
+        <button onClick={() => {timeContext.setTimeStamp(timeContext.getCurrentTimestamp() + 60 * 1000)}}>inc minute</button>
+      </div>
+      {authContext.account ? loggedIn_page : notloggedIn_page}
+    </>
+
+    
   )
 }
 
@@ -135,95 +152,28 @@ function Reigster() {
   )
 }
 
-function Dashboard_loggedIn() {
-  const authContext = useContext(AuthContext)
-  const [tDeckInfo, setTDeckInfo] = useState<TDeckInfo[] | null>(null);
-  const navigate = useNavigate();
-  
-  // get the decks for the user
-  useEffect(() => {
-    const todo = async () => {
-      const res = await getTDeckListForUser_service(authContext.account?.username as string, authContext.account?.password as string );
-      if ('error' in res) {
-        window.alert(res.error);
-        setTDeckInfo([])
-        return;
-      }
-      setTDeckInfo(res);
-    }
-    todo();
-  }, [])
 
-  return (
-    <>
-      <h1>Dashboard</h1>
-      <div>
-        Your current learning progress is
-      </div>
-      <div style={{fontSize: 50}}>
-        50%
-      </div>
-      <div>you haven't completed your daily goal of 10 new words yet</div>
-      <div>
-        <Link to="/new-words">
-          <button>learn new words</button>
-        </Link>
-        
-      </div>
-      <div>
-        <button onClick={() => navigate('/review-cards')}>review due cads</button>
-      </div>
-      <h2>target word decks</h2>
-      {
-        tDeckInfo ?
-          tDeckInfo.length > 0 ?
-            tDeckInfo.map(tdeckInfo => {
-              return <div style={{border: '1px solid black'}}>
-                <div>
-                  name: {tdeckInfo.name}
-                </div>
-                <div>
-                  totalWords: {tdeckInfo.totalWords}
-                </div>
-                <div>
-                  knownWords: {tdeckInfo.knownWords}
-                </div>
-              </div>
-            })
-          :
-          <div>you have no target decks</div>
-        :
-          <div>fetching...</div>
-     }
-    </>
-  )
-}
-
-function Dashboard() {
-  const authContext = useContext(AuthContext)
-
-  return (
-    authContext.account ? <Dashboard_loggedIn /> : <div>you must login to access this feature</div>
-  )
-}
 
 function App() {
   return (
     <>
       <AuthContextProvider>
-        <>
-          <Links />
-          <Routes>
-            <Route path="/" element={<LandingPage />}/>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<Reigster />} />
-            <Route path="/dashboard" element={<Dashboard/>} />
-            <Route path="/new-words/*" element={<NewWords_/>} />
-            <Route path="/review-cards/*" element={<ReviewCards_ />} />
-            <Route path="/a/:wordId" element={<A/>} />
-            <Route path="*" element={<div>App.tsx: page not found</div>}/>
-          </Routes>
-        </>
+        <TimeContextProvider>
+          <>
+            <Links />
+            <Routes>
+              <Route path="/" element={<LandingPage />}/>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<Reigster />} />
+              <Route path="/dashboard" element={<Dashboard_/>} />
+              <Route path="/new-words/*" element={<NewWords_/>} />
+              <Route path="/review-cards/*" element={<ReviewCards_ />} />
+              <Route path="/browse-deck/*" element={<BrowseDeck_ />} />
+              <Route path="/a/:wordId" element={<A/>} />
+              <Route path="*" element={<div>App.tsx: page not found</div>}/>
+            </Routes>
+          </>
+        </TimeContextProvider>
       </AuthContextProvider>
     </>
   )

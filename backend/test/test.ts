@@ -6,8 +6,6 @@ const prisma = new PrismaClient();
 // const BASEURL = 'http://localhost:3004'
 
 
-
-
 async function reset() {
   // delete everything except for 'words' and 'examplesentence'
   // make an account with username a, password b
@@ -38,7 +36,7 @@ async function getTDeckListForUser_afterKnownWordChange() {
   const deck = decks[0];
   console.log('initial decks');
   console.log(deck);
-  const words = await getWordsInDeck('a', 'b', deck.id)
+  const words = await getWordsInDeck('a', 'b', deck.id, 0, 1000)
   if ('error' in words) {
     console.log(words)
     return;
@@ -68,7 +66,7 @@ async function getWordKnownLevel_afterSet() {
   const deck = decks[0];
   console.log('initial decks');
   console.log(deck);
-  const words = await getWordsInDeck('a', 'b', deck.id)
+  const words = await getWordsInDeck('a', 'b', deck.id, 0, 1000)
   if ('error' in words) {
     console.log(words)
     return;
@@ -91,7 +89,7 @@ async function getExampleSentencesForWord_1() {
   const deck = decks[0];
   console.log('initial decks');
   console.log(deck);
-  const words = await getWordsInDeck('a', 'b', deck.id)
+  const words = await getWordsInDeck('a', 'b', deck.id, 0, 1000)
   if ('error' in words) {
     console.log(words)
     return;
@@ -112,7 +110,7 @@ async function getCardsForWord_1() {
   const deck = decks[0];
   console.log('initial decks');
   console.log(deck);
-  const words = await getWordsInDeck('a', 'b', deck.id)
+  const words = await getWordsInDeck('a', 'b', deck.id, 0, 1000)
   if ('error' in words) {
     console.log(words)
     return;
@@ -134,7 +132,7 @@ async function getNewWordsList_1() {
   const deck = decks[0];
   console.log('initial deck');
   console.log(deck);
-  const words = await getWordsInDeck('a', 'b', deck.id)
+  const words = await getWordsInDeck('a', 'b', deck.id, 0, 1000)
   if ('error' in words) {
     console.log(words)
     return;
@@ -164,18 +162,47 @@ async function getNewWordsList_1() {
   console.log(entry);
 }
 
+async function getWordsInDeck_1() {
+  // await reset();
+  setBaseUrl('http://localhost:3004')
+  let decks = await getTDeckListForUser('a', 'b');
+  if ('error' in decks) {
+    console.log(decks);
+    return;
+  }
+  const deck = decks[0];
+  console.log('initial deck');
+  console.log(deck);
+  let words = await getWordsInDeck('a', 'b', deck.id, 0, 1000)
+  if ('error' in words) {
+    console.log(words)
+    return;
+  }
+  console.log('first 5 words in deck');
+  // make first 5 words known
+  for (let i = 0; i < 5; i++) {
+    console.log(words[i].kanji);
+    await changeWordKnownLevel('a', 'b', words[i].id, '0');
+  }
+
+  words = await getWordsInDeck('a', 'b', deck.id, 0, 1000)
+  if ('error' in words) {
+    console.log(words)
+    return;
+  }
+  for (let i = 0; i < 10; i++) {
+    console.log(JSON.stringify(words[i], null, 4));
+  }
+}
+
 async function deleteAllCards() {
   await prisma.card.deleteMany()
 }
 
-async function main() {
-  // get all cards
-  setBaseUrl('http://localhost:3004')
-  
-  const mx = (new Date(2500, 11, 1,1,1)).getTime();
-  const cards = await getDueCards('a', 'b', mx, 10000);
 
-  console.log(JSON.stringify(cards, null, 4));
+
+async function main() {
+  await reset();
   
 
 }

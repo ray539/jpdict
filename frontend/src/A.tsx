@@ -22,44 +22,7 @@ import { useParams } from "react-router-dom";
 //   definitions: string[]
 //   exampleSentences: ExampleSentence[]
 // }
-const MOKUHYOU = {
-  "id": "00a2eae8-c4a0-4b7e-aede-4fcf148814ea",
-  "seqNum": 0,
-  "entrySeq": "1535650",
-  "kanji": "目標",
-  "kanjiOther": [],
-  "reading": "もくひょう",
-  "readingOther": [],
-  "definitions": [
-      {
-          "xrefs": [],
-          "glosses": [
-              "goal",
-              "target",
-              "aim",
-              "objective"
-          ],
-          "antonyms": [],
-          "extraInfo": [],
-          "positions": [
-              "noun (common) (futsuumeishi)"
-          ]
-      },
-      {
-          "xrefs": [],
-          "glosses": [
-              "mark",
-              "sign",
-              "landmark"
-          ],
-          "antonyms": [],
-          "extraInfo": [],
-          "positions": [
-              "noun (common) (futsuumeishi)"
-          ]
-      }
-  ]
-};
+
 
 // function getCardFromWord() {
 //   const newCard : Card = {

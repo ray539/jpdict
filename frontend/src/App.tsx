@@ -11,6 +11,7 @@ import { ReviewCards, ReviewCards_ } from './ReviewCards';
 import TimeContextProvider, { TimeContext } from './context/TimeContextProvider';
 import { Dashboard_ } from './DashBoard';
 import { BrowseDeck_ } from './BrowseDeck';
+import { Search_ } from './Search';
 // DEBUG
 // import { increment_days, increment_hours, now_ } from './stubDate';
 
@@ -29,6 +30,9 @@ function Links() {
     </button>
     <Link to="/dashboard">
       <button>dashboard</button>
+    </Link>
+    <Link to="/search">
+      <button>search dictionary</button>
     </Link>
     <Link to="/">
       <button>logo</button>
@@ -166,6 +170,7 @@ function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<Reigster />} />
               <Route path="/dashboard" element={<Dashboard_/>} />
+              <Route path="/search" element={<Search_ />} />
               <Route path="/new-words/*" element={<NewWords_/>} />
               <Route path="/review-cards/*" element={<ReviewCards_ />} />
               <Route path="/browse-deck/*" element={<BrowseDeck_ />} />

@@ -6,6 +6,7 @@ import { objectEnumNames } from '@prisma/client/runtime/library';
 import { Account } from '../global';
 import { log } from 'console';
 import { equal } from 'assert';
+import { searchDictionary } from './search';
 const prisma = new PrismaClient();
 const app = express()
 app.use(morgan('short'))
@@ -82,6 +83,71 @@ app.post('/api/register', async (req, res) => {
   return res.json(newAccount);
 })
 
+app.get('/api/getDeckInfo', async(req, res) => {
+  const username = req.headers.username as string
+  const password = req.headers.password as string;
+  const deckId = req.headers.deckId as string
+  const foundAccnt = await loginAccount(username, password)
+  if (!foundAccnt) {
+    return res.status(403).json({error: 'invalid credentials'})
+  }
+
+  const decks1 = await prisma.wordDeck.findMany({
+    where: {
+      id: deckId
+    },
+    select: {
+      id: true,
+      name: true,
+      _count: {
+        select: {
+          words: true
+        },
+      }
+    }
+  })
+  const decks2 = await prisma.wordDeck.findMany({
+    where: {
+      id: deckId
+    },
+    select: {
+      id: true,
+      name: true,
+      _count: {
+        select: {
+          words: {
+            where: {
+              word: {
+                knownByAccount: {
+                  some: {
+                    knownLevel: {
+                      notIn: ["0"]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+      }
+    }
+  })
+
+  const deckList = decks1.map((o, i) => {
+    return {
+      id: o.id,
+      name: o.name,
+      totalWords: o._count.words,
+      knownWords: decks2[i]._count.words
+    }
+  })
+
+  // console.log('here server');
+  
+
+  return res.json(deckList[0])
+})
+
 /**
  * returns:
  * {
@@ -154,36 +220,102 @@ app.get('/api/getTDeckListForUser', async(req, res) => {
     }
   })
 
-  // const decks2 = await Promise.all(decks1.map(async (obj) => {
-  //   const deckId = obj.id
-  //   // get all words in the deck with known level which is not new
-  //   const knownWords = await prisma.belongsToWordDeck.findMany({
-  //     where: {
-  //       wordDeckId: deckId,
-  //       word: {
-  //         knownByAccount: {
-  //           some: {
-  //             accountId: {
-  //               equals: foundAccnt.id,
-  //             },
-  //             knownLevel: {
-  //               in: ['1', '2', '3', '4', '5']
-  //             }
-  //           }
-  //         }
-  //       }  
-  //     },
-  //   })
-
-  //   return {
-  //     id: obj.id,
-  //     name: obj.name,
-  //     totalWords: obj._count.words,
-  //     knownWords: knownWords.length
-  //   }
-  // }))
-
   res.json(deckList)
+})
+
+app.delete('/api/deleteWordFromDeck', async (req, res) => {
+  const username = req.headers.username as string
+  const password = req.headers.password as string;
+  const foundAccnt = await loginAccount(username, password)
+  if (!foundAccnt) {
+    return res.status(403).json({error: 'invalid credentials'})
+  }
+  const deckId = req.query.deckId as string;
+  const wordId = req.query.wordId as string;
+  console.log(username);
+  console.log(password);
+  console.log(deckId);
+  console.log(wordId);
+  
+  // relabel seqnums...
+  const newWordIds_ = await prisma.belongsToWordDeck.findMany({
+    where: {
+      wordDeckId: deckId,
+      wordId: {
+        not: wordId
+      }
+    },
+    select: {
+      wordId: true
+    },
+    orderBy: {
+      seqNum: 'asc'
+    }
+  })
+  await prisma.belongsToWordDeck.deleteMany({
+    where: {
+      wordDeckId: deckId
+    }
+  })
+  
+  const data = newWordIds_.map((obj, i) => {
+    return {
+      wordId: obj.wordId,
+      wordDeckId: deckId,
+      seqNum: i,
+    }
+  });
+  await prisma.belongsToWordDeck.createMany({
+    data: data
+  });
+  res.json({msg: 'OK'})
+})
+
+/**
+ * given a list of wordIds, delete them all
+ */
+app.post('/api/deleteWordsFromDeck', async (req, res) => {
+  const username = req.headers.username as string
+  const password = req.headers.password as string;
+  const foundAccnt = await loginAccount(username, password)
+  if (!foundAccnt) {
+    return res.status(403).json({error: 'invalid credentials'})
+  }
+  const deckId = req.body.deckId as string
+  const wordIds = req.body.wordIds as string[]
+
+  // relabel seqnums...
+  const newWordIds_ = await prisma.belongsToWordDeck.findMany({
+    where: {
+      wordDeckId: deckId,
+      wordId: {
+        notIn: wordIds
+      },
+    },
+    select: {
+      wordId: true
+    },
+    orderBy: {
+      seqNum: 'asc'
+    }
+  })
+  await prisma.belongsToWordDeck.deleteMany({
+    where: {
+      wordDeckId: deckId
+    }
+  })
+  
+  const data = newWordIds_.map((obj, i) => {
+    return {
+      wordId: obj.wordId,
+      wordDeckId: deckId,
+      seqNum: i,
+    }
+  });
+  await prisma.belongsToWordDeck.createMany({
+    data: data
+  });
+  res.json({msg: 'OK'})
 })
 
 app.put('/api/changeWordKnownLevel', async (req, res) => {
@@ -671,6 +803,26 @@ app.get('/api/getDueCards', async(req, res) => {
     take: limit
   })
   res.json(dueCards)
+})
+
+app.get('/api/searchDictionary', async(req, res) => {
+  const username = req.headers.username as string;
+  const password = req.headers.password as string;
+  const foundAccnt = await loginAccount(username, password)
+  if (!foundAccnt) {
+    return res.status(403).json({error: 'invalid credentials'})
+  }
+
+  const queryStr = req.query.queryStr as string;
+  if (!queryStr) {
+    return res.status(403).json({error: 'no queryStr'})
+  }
+  const skip = Number(req.query.skip);
+  const take = Number(req.query.take);
+
+  const searchRes = searchDictionary(queryStr, skip, take);
+  
+
 })
 
 

@@ -50,6 +50,23 @@ export async function register(username: string, password: string) {
   }
 }
 
+export async function getDeckInfo(username: string, password: string, deckId: string) {
+  try {
+    
+    const res = await axios.get(`${BASEURL}/api/getDeckInfo`, {
+      headers: {
+        username: username,
+        password: password,
+        deckId: deckId
+      }
+    })
+    return res.data as TDeckInfo;
+  } catch (e) {
+    return extractError(e)
+  }
+}
+
+
 export async function getTDeckListForUser(username: string, password: string) {
   try {
     const res = await axios.get(`${BASEURL}/api/getTDeckListForUser`, {
@@ -59,6 +76,42 @@ export async function getTDeckListForUser(username: string, password: string) {
       }
     })
     return res.data as TDeckInfo[];
+  } catch (e) {
+    return extractError(e)
+  }
+}
+
+export async function deleteWordFromDeck(username: string, password: string, deckId: string, wordId: string) {
+  try {
+    const res = await axios.delete(`${BASEURL}/api/deleteWordFromDeck`, {
+      headers: {
+        username: username,
+        password: password,
+      },
+      params: {
+        deckId: deckId,
+        wordId: wordId
+      }
+    })
+    return res.data;
+  } catch (e) {
+    return extractError(e)
+  }
+}
+
+export async function deleteWordsFromDeck(username: string, password: string, deckId: string, wordIds: string[]) {
+  try {
+    const res = await axios.post(`${BASEURL}/api/deleteWordsFromDeck`, {
+      headers: {
+        username: username,
+        password: password,
+      },
+      data: {
+        deckId: deckId,
+        wordIds: wordIds
+      }
+    })
+    return res.data;
   } catch (e) {
     return extractError(e)
   }

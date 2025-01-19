@@ -1,8 +1,8 @@
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "./context/AuthContextProvider";
 import { Route, Routes, useParams, useSearchParams } from "react-router-dom";
-import { Word } from "../../global";
-import { getWordsInDeck } from "./service/requestHelper";
+import { TDeckInfo, Word } from "../../global";
+import { deleteWordFromDeck, getDeckInfo, getWordsInDeck } from "./service/requestHelper";
 
 
 const WORDS_PER_PAGE = 10
@@ -12,44 +12,70 @@ function DeckView() {
   const pageIdx = searchParams.get('pageIdx')
   // const { deckId, pageIdx } = useParams();
   const [words, setWords] = useState<Word[]>();
+  const [deckInfo, setDeckInfo] = useState<TDeckInfo>();
   const authContext = useContext(AuthContext);
   const acct = authContext.account!;
   
-  useEffect(() => {
-    async function fetchAndSetWords() {
-      const fetchedWords = await getWordsInDeck(acct.username, acct.password, deckId!, Number(pageIdx) * WORDS_PER_PAGE, WORDS_PER_PAGE);
-      if ('error' in fetchedWords) {
-        window.alert('couldn\'t fetch words')
-        return;
-      }
-      console.log(fetchedWords);
-      setWords(fetchedWords)
+  async function fetchAndSetWords() {
+    const fetchedWords = await getWordsInDeck(acct.username, acct.password, deckId!, Number(pageIdx) * WORDS_PER_PAGE, WORDS_PER_PAGE);
+    if ('error' in fetchedWords) {
+      window.alert('couldn\'t fetch words')
+      return;
     }
+    setWords(fetchedWords)
+
+    const deckInfo = await getDeckInfo(acct.username, acct.password, deckId!)
+    if ('error' in deckInfo) {
+      window.alert('couldn\'t get deck info')
+      return
+    }
+    setDeckInfo(deckInfo)
+    
+  }
+
+  useEffect(() => {
     fetchAndSetWords();
   }, [searchParams]);
 
+  
+  const NUMPAGES = deckInfo ? Math.floor(deckInfo.totalWords / WORDS_PER_PAGE) : null
 
   return (
     <>
       {
         words ?
           <div style={{border: '1px solid red', minHeight: '30vh', padding:'1em'}}>
-            <button disabled={Number(pageIdx) == 0} onClick={() => {
-              setSearchParams(old => {
-                old.set('pageIdx', (Math.max(Number(old.get('pageIdx')) - 1, 0)).toString());               
-                return old
-              });
-            }}>
-              prev page
-            </button>
-            <button onClick={() => {
-              setSearchParams(old => {
-                old.set('pageIdx', (Number(old.get('pageIdx')) + 1).toString());               
-                return old
-              });
-            }}>
-              next page
-            </button>
+            <h2>deckname: {deckInfo ? deckInfo.name : 'NA'}</h2>
+            <div>total words: {deckInfo ? deckInfo.totalWords : 'NA'}</div>
+            <div>known words: {deckInfo ? deckInfo.knownWords : 'NA'}</div>
+            <div style={{display: 'flex', justifyContent: 'space-between', border: '1px solid black', padding: '0.5em', marginBottom: '0.5em'}}>
+              <div style={{display: 'flex', alignItems: 'center'}}>
+              
+                <div>page: {pageIdx} / {NUMPAGES ? NUMPAGES : 'NA'}</div>
+                <button disabled={Number(pageIdx) == 0} onClick={() => {
+                  setSearchParams(old => {
+                    old.set('pageIdx', (Math.max(Number(old.get('pageIdx')) - 1, 0)).toString());               
+                    return old
+                  });
+                }}>
+                  ←
+                </button>
+                <button disabled={NUMPAGES != null && Number(pageIdx) == NUMPAGES} onClick={() => {
+                  setSearchParams(old => {
+                    old.set('pageIdx', (Number(old.get('pageIdx')) + 1).toString());               
+                    return old
+                  });
+                }}>
+                  →
+                </button>
+                
+              </div>
+              <div>
+                filter:
+                <input type='text'></input>
+              </div>
+            </div>
+
             {
               words.map(w => {
                 let kanjiColor = 'black';
@@ -75,7 +101,21 @@ function DeckView() {
                         {def}
                       </div>
                     </div>
-                    <button style={{}}>view cards (todo)</button>
+                    <div>
+                      <button style={{backgroundColor: 'pink'}} onClick={async () => {
+                        if (window.confirm(`are you sure you want to delete the word ${w.kanji} from your deck?`)) {
+                          let res = await deleteWordFromDeck(acct.username, acct.password, deckId!, w.id);
+                          if ('error' in res) {
+                            window.alert(res)
+                            return;
+                          }
+                          await fetchAndSetWords()
+                        }
+
+
+                      }}>delete</button>
+                      <button style={{marginLeft: '1em'}}>view cards (todo)</button>
+                    </div>
                   </div>
                 )
               })

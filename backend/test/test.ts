@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import axios, { AxiosResponse } from 'axios'
-import { changeWordKnownLevel, getCard, getCardsForWord, getDueCards, getExampleSentencesForWord, getNewWordsList, getTDeckListForUser, getWord, getWordKnownLevel, getWordsInDeck, register, setBaseUrl  } from '../../frontend/src/service/requestHelper'
+import { changeWordKnownLevel, deleteWordFromDeck, getCard, getCardsForWord, getDeckInfo, getDueCards, getExampleSentencesForWord, getNewWordsList, getTDeckListForUser, getWord, getWordKnownLevel, getWordsInDeck, register, setBaseUrl  } from '../../frontend/src/service/requestHelper'
 import { log } from "console";
 const prisma = new PrismaClient();
 // const BASEURL = 'http://localhost:3004'
@@ -195,20 +195,60 @@ async function getWordsInDeck_1() {
   }
 }
 
+async function getDeckInfo_1() {
+  await reset();
+  let decks = await getTDeckListForUser('a', 'b');
+  if ('error' in decks) {
+    console.log('failed');
+    return;
+  }
+  const deck = decks[0];
+  console.log('initial deck');
+  console.log(deck);
+  const deckId = deck.id;
+  const deckInfo = await getDeckInfo('a', 'b', deckId);
+  console.log(deckInfo);
+}
+
+async function deleteWordFromDeck_1() {
+  await reset();
+  let decks = await getTDeckListForUser('a', 'b');
+  if ('error' in decks) {
+    console.log('failed');
+    return;
+  }
+  const deck = decks[0];
+  let words = await getWordsInDeck('a', 'b', deck.id, 0, 1000)
+  if ('error' in words) {
+    console.log('failed');
+    return;
+  }
+  console.log('first 5 words in deck');
+  for (let i = 0; i < 5; i++) {
+    console.log(words[i]);
+  }
+  console.log('delete words[3]');
+  await deleteWordFromDeck('a','b', deck.id, words[3].id)
+
+  console.log('refetch words');
+  words = await getWordsInDeck('a', 'b', deck.id, 0, 1000)
+  if ('error' in words) {
+    console.log('failed');
+    return;
+  }
+  console.log('new words');
+  for (let i = 0; i < 5; i++) {
+    console.log(words[i]); 
+  }
+}
+
 async function deleteAllCards() {
   await prisma.card.deleteMany()
 }
 
-
-
 async function main() {
-  await reset();
-  
+  await reset()
 
 }
 
 main()
-
-
-
-

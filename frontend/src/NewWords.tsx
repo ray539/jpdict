@@ -616,7 +616,7 @@ function EditWordList() {
   return (
     <Modal show animation={false} size="xl" onHide={() => {
       if (change) {
-        if (window.confirm('unsaved changes detected. Are you sure you wan\'t to exit?')) {
+        if (window.confirm('unsaved changes detected. Are you sure you want to exit without saving?')) {
           navigate('/new-words')
         }
       } else {
@@ -630,7 +630,7 @@ function EditWordList() {
         <div>select word source</div>
         <div>
           <button onClick={() => navigate('fromTargetDeck')}>target deck</button>
-          <button onClick={() => navigate('fromCustom')}>custom selection</button>
+          <button onClick={() => navigate('fromCustom')}>dictionary</button>
         </div>
         <div style={{border: '1px solid black', minHeight: '30vh', padding: '0.5em'}}>
           <Routes>
@@ -646,7 +646,12 @@ function EditWordList() {
               currWordList.map(w => {
                 return (
                   <div style={{border: '1px solid black', marginRight: '1em', backgroundColor: 'whitesmoke', position: 'relative'}}>
-                    {w.kanji}
+                    <ruby>{w.kanji} <rt>{w.reading}</rt></ruby>
+                    <button style={{marginLeft: '10px', backgroundColor: 'pink'}} onClick={() => {
+                      updateCurrWordListR(old => {
+                        old.this = old.this!.filter(clw => clw.id != w.id)
+                      })
+                    }}>x</button>
                   </div>
                 )
                 

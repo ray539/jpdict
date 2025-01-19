@@ -59,7 +59,7 @@ function Dashboard() {
                 <div>
                   <button onClick={() => {
                     navigate(`/browse-deck/?deckId=${tdeckInfo.id}&pageIdx=0`)
-                  }}>view words</button>
+                  }}>view / edit deck</button>
                 </div>
               </div>
             })

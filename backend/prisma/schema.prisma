@@ -23,6 +23,7 @@ model Word {
   definitions Json
 
   exampleSentences ExampleSentence[]
+  customSentences CustomSentence[]
   belongsToWordDeck BelongsToWordDeck[]
   inCard Card[]
   knownByAccount WordKnownLevel[]
@@ -44,6 +45,20 @@ model ExampleSentence {
   default_wordId String
 }
 
+// example sentence tied to an account, and only visible from account. Not part of original database
+model CustomSentence {
+  id String @id @default(uuid())
+  jpn String
+  eng String
+
+  default_word_wordForm String
+  default_word Word @relation(fields: [default_wordId], references: [id])
+  default_wordId String
+
+  account Account @relation(fields: [accountId], references: [id])
+  accountId String
+}
+
 model Account {
   id String @id @default(uuid())
   username String
@@ -57,12 +72,15 @@ model Account {
   similarWordRels SimilarWord[]
 
   NewWordList NewWordList?
+  customSentences CustomSentence[]
 }
 
 enum DeckSelectionStrat {
   HIGHESTPRIO
   RANDOM
 }
+
+
 
 model WordDeck {
   id String @id @default(uuid())
@@ -119,6 +137,10 @@ model SimilarWord {
   @@id([accountId, word1Id, word2Id])
 }
 
+enum CardType {
+  VOCAB
+  SENTENCE
+}
 
 model Card {
   id String @id @default(uuid())
@@ -133,6 +155,7 @@ model Card {
   // can be different from that in the original word, because user may edit the card
   cardData Json
   knownLevel Int
+  cardType CardType
 
   lastReviewed DateTime?
   timeDue DateTime

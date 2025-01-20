@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import axios, { AxiosResponse } from 'axios'
-import { changeWordKnownLevel, deleteWordFromDeck, getCard, getCardsForWord, getDeckInfo, getDueCards, getExampleSentencesForWord, getNewWordsList, getTDeckListForUser, getWord, getWordKnownLevel, getWordsInDeck, register, setBaseUrl  } from '../../frontend/src/service/requestHelper'
+import { addCustomSentenceForWord, changeWordKnownLevel, deleteCustomSentenceForWord, deleteWordFromDeck, getCard, getCardsForWord, getCustomSentencesForWord, getDeckInfo, getDueCards, getExampleSentencesForWord, getNewWordsList, getTDeckListForUser, getWord, getWordKnownLevel, getWordsInDeck, register, searchDictionary, setBaseUrl  } from '../../frontend/src/service/requestHelper'
 import { log } from "console";
 const prisma = new PrismaClient();
 // const BASEURL = 'http://localhost:3004'
@@ -16,7 +16,9 @@ async function reset() {
   await prisma.newWordList.deleteMany();
   await prisma.wordKnownLevel.deleteMany();
   await prisma.similarWord.deleteMany();
-  await prisma.account.deleteMany();  
+  await prisma.customSentence.deleteMany();
+  await prisma.account.deleteMany(); 
+  
   await register('a', 'b')
 }
 
@@ -242,12 +244,49 @@ async function deleteWordFromDeck_1() {
   }
 }
 
+async function searchDictionary_1() {
+  await reset();
+  const result = await searchDictionary('a', 'b', 'opinion', 0, 10);
+  console.log(result);
+}
+
+async function customSentence_1() {
+  await reset();
+  
+  const searchResult = await searchDictionary('a', 'b', 'safety', 0, 10);
+  if ('error' in searchResult) {
+    console.log('failed');
+    return;
+  }
+  console.log(searchResult);
+  const word = searchResult[0].word
+  await addCustomSentenceForWord('a', 'b', word.id, '安全は一番大切だ', 'safety is most important', '安全')
+  let sentences = await getCustomSentencesForWord('a', 'b', word.id);
+  console.log(sentences);
+  if ('error' in sentences) {
+    console.log('failed');
+    return;
+  }
+  await deleteCustomSentenceForWord('a', 'b', sentences[0].id);
+  console.log('here');
+  sentences = await getCustomSentencesForWord('a', 'b', word.id);
+  console.log(sentences);
+  
+
+
+
+  // await addCustomSentenceForWord('a', 'b', )
+
+
+}
+
+
 async function deleteAllCards() {
   await prisma.card.deleteMany()
 }
 
 async function main() {
-  await reset()
+  customSentence_1()
 
 }
 

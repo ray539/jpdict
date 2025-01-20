@@ -332,6 +332,7 @@ function getMatchlevel(terms: string[], word: Word) {
     .flatMap(def => def.glosses
       .flatMap(gloss => gloss
         .split(/\s+/)))
+        
     .map(w => w
       .replace(/[^a-z\d]/, '')
       .toLowerCase()
@@ -347,15 +348,21 @@ function getMatchlevel(terms: string[], word: Word) {
 
 export async function searchDictionary(queryStr: string, skip: number, take: number) {
   let terms = queryStr.split(/\s+/).map(t => t.toLowerCase())
-  let allWords = await prisma.word.findMany();
+  let allWords = await prisma.word.findMany({});
+  // console.log(allWords.slice(0, 10));
+  
   let result = allWords.map(w => {
     return {
       word: w,
       matchLvl: getMatchlevel(terms, w as any)
     }
   });
+  
+  
   result = result.filter(obj => obj.matchLvl !== null)
-  result.sort((obj1, obj2) => -(obj1.matchLvl! - obj2.matchLvl!))
+  
+  result = result.sort((obj1, obj2) => -(obj1.matchLvl! - obj2.matchLvl!))
+  
   // skip..skip + take
   result = result.slice(skip, skip + take)
   return result;

@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios'
-import {Account, Card, ExampleSentence, TDeckInfo, Word} from '../../../global'
+import {Account, Card, CardType, ExampleSentence, SearchResult, TDeckInfo, Word} from '../../../global'
 let BASEURL = ''
 
 /**
@@ -156,6 +156,62 @@ export async function getWordsInDeck(username: string, password: string, deckId:
   }
 }
 
+export async function getCustomSentencesForWord(username: string, password: string, wordId: string) {
+  try {
+    const res = await axios.get(`${BASEURL}/api/getCustomSentencesForWord`, {
+      headers: {
+        username: username,
+        password: password
+      },
+      params: {
+        wordId: wordId
+      }
+    })
+    return res.data as ExampleSentence[];
+  } catch (e) {
+    return extractError(e)
+  }
+}
+
+export async function addCustomSentenceForWord(username: string, password: string, wordId: string, jpn: string, eng: string, wordForm: string) {
+  try {
+    const res = await axios.post(`${BASEURL}/api/addCustomSentenceForWord`, 
+      {
+        wordId: wordId,
+        jpn: jpn,
+        eng: eng,
+        wordForm: wordForm
+      },
+      {
+          headers: {
+            username: username,
+            password: password
+          }
+      }
+    )
+    return res.data
+  } catch(e) {
+    return extractError(e)
+  }
+}
+
+export async function deleteCustomSentenceForWord(username: string, password: string, customSentenceId: string) {
+  try {
+    const res = await axios.delete(`${BASEURL}/api/deleteCustomSentenceForWord`, {
+      headers: {
+        username: username,
+        password: password
+      },
+      params: {
+        customSentenceId: customSentenceId,
+      }
+    })
+    return res.data
+  } catch (e) {
+    return extractError(e)
+  }
+}
+
 export async function getWord(username: string, password: string, wordId: string) {
   try {
     const res = await axios.get(`${BASEURL}/api/getWord`, 
@@ -299,14 +355,19 @@ export async function getCardsForWord(username: string, password: string, wordId
   }
 }
 
-export async function createCard(username: string, password: string, card: Card) {
+export async function createCard(username: string, password: string, card: Card, cardType: CardType) {
   try {
-    const res = await axios.post(`${BASEURL}/api/createCard`, {
-      headers: {
-        username: username,
-        password: password
+    const res = await axios.post(`${BASEURL}/api/createCard`, 
+      {
+        cardData: card,
+        cardType: cardType
       },
-      data: card
+      {
+        headers: 
+        {
+          username: username,
+          password: password
+        },
     })
     return fixDatesOnCard(res.data);
   } catch (e) {
@@ -407,6 +468,27 @@ export async function getDueCards(username: string, password: string, timestamp:
     })
 
     const ret = (res.data as Card[]).map((c: Card) => fixDatesOnCard(c));
+    return ret;
+  } catch (e) {
+    return extractError(e)
+  }
+}
+
+export async function searchDictionary(username: string, password: string, queryStr: string, skip: number, take: number) {
+  try {
+    const res = await axios.get(`${BASEURL}/api/searchDictionary`, {
+      headers: {
+        username: username,
+        password: password
+      },
+      params: {
+        queryStr: queryStr,
+        skip: skip,
+        take: take
+      }
+    })
+
+    const ret = res.data as SearchResult[] 
     return ret;
   } catch (e) {
     return extractError(e)

@@ -12,6 +12,8 @@ import TimeContextProvider, { TimeContext } from './context/TimeContextProvider'
 import { Dashboard_ } from './DashBoard';
 import { BrowseDeck_ } from './BrowseDeck';
 import { Search_ } from './Search';
+import { WordDetails_ } from './WordDetails';
+import { CardsForWord_ } from './CardsForWord';
 // DEBUG
 // import { increment_days, increment_hours, now_ } from './stubDate';
 
@@ -174,6 +176,8 @@ function App() {
               <Route path="/new-words/*" element={<NewWords_/>} />
               <Route path="/review-cards/*" element={<ReviewCards_ />} />
               <Route path="/browse-deck/*" element={<BrowseDeck_ />} />
+              <Route path="/word-details/*" element={<WordDetails_ />} />
+              <Route path="/cards-for-word/*" element={<CardsForWord_ />}/>
               <Route path="/a/:wordId" element={<A/>} />
               <Route path="*" element={<div>App.tsx: page not found</div>}/>
             </Routes>

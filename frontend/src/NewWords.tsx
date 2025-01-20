@@ -1,6 +1,6 @@
 import React, { createContext, ReactElement, useContext, useEffect, useState } from "react";
 import { AuthContext } from "./context/AuthContextProvider";
-import { Account, Card, ExampleSentence, TDeckInfo, Word } from "../../global";
+import { Account, Card, CardType, ExampleSentence, TDeckInfo, Word } from "../../global";
 import { changeWordKnownLevel, createCard, deleteCard, getCard, getCardsForWord, getExampleSentencesForWord, getNewWordsList, getTDeckListForUser, getWord, getWordsInDeck, updateCard, updateNewWordsList } from "./service/requestHelper";
 import { Form, Link, Route, Routes, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { EditTextarea } from "react-edit-text";
@@ -65,6 +65,7 @@ async function getCardFromWord(word: Word, acct: Account, timestamp: number) {
       definitions: word.definitions.map((def, i) => `${i + 1}. ${def.glosses.join(';')}. ${def.positions.join(', ')}`).join('\n'),
       exampleSentences: []
     },
+    cardType: CardType.VOCAB,
     knownLevel: 0,
     lastReviewed: null,
     timeDue: new Date(currTimestamp + 1800 * 1000), // due half an hour from now
@@ -278,7 +279,7 @@ function CardView({wIndex, cIndex} : {wIndex: number, cIndex: number}) {
               old.words![wIndex].cards![cIndex].card!.dateAdded = new Date(timeContext.getCurrentTimestamp());
             })
             let card = pageState.words![wIndex].cards![cIndex]!.card!;
-            const res = await createCard(acct.username, acct.password, card);
+            const res = await createCard(acct.username, acct.password, card, CardType.VOCAB);
             console.log('created card:');
             console.log(res);
 

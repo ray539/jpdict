@@ -623,6 +623,66 @@ app.get('/api/getExampleSentencesForWord', async(req, res) => {
   res.json(exampleSentences)
 })
 
+app.get('/api/getCustomSentencesForWord', async(req, res) => {
+  const username = req.headers.username as string
+  const password = req.headers.password as string;
+  const foundAccnt = await loginAccount(username, password)
+  if (!foundAccnt) {
+    return res.status(403).json({error: 'invalid credentials'})
+  }
+  const wordId = req.query.wordId as string
+  const sentences = await prisma.customSentence.findMany({
+    where: {
+      accountId: foundAccnt.id,
+      default_wordId: wordId
+    }
+  })
+  res.json(sentences)
+})
+
+app.post('/api/addCustomSentenceForWord', async(req, res) => {
+  const username = req.headers.username as string
+  const password = req.headers.password as string;
+  const foundAccnt = await loginAccount(username, password)
+  if (!foundAccnt) {
+    return res.status(403).json({error: 'invalid credentials'})
+  }
+
+  const wordId = req.body.wordId as string
+  const jpn = req.body.jpn as string
+  const eng = req.body.eng as string
+  const wordForm = req.body.wordForm as string
+
+  const output = await prisma.customSentence.create({
+    data: {
+      jpn: jpn,
+      eng: eng,
+      accountId: foundAccnt.id,
+      default_wordId: wordId,
+      default_word_wordForm: wordForm
+    }
+  })
+  res.json(output)
+})
+
+app.delete('/api/deleteCustomSentenceForWord', async(req, res) => {
+  const username = req.headers.username as string
+  const password = req.headers.password as string;
+  const foundAccnt = await loginAccount(username, password)
+  if (!foundAccnt) {
+    return res.status(403).json({error: 'invalid credentials'})
+  }
+  const customSentenceId = req.query.customSentenceId as string
+  const output = await prisma.customSentence.delete({
+    where: {
+      id: customSentenceId
+    }
+  })
+  res.json(output)
+})
+
+
+
 app.get('/api/getWord', async(req, res) => {
   const username = req.headers.username as string
   const password = req.headers.password as string;
@@ -680,12 +740,13 @@ app.get('/api/getCardsForWord', async(req, res) => {
   if (!foundAccnt) {
     return res.status(403).json({error: 'invalid credentials'})
   }
+
   const wordId = req.query.wordId as string;
 
   const cards = await prisma.card.findMany({
     where: {
       accountId: foundAccnt.id,
-      wordId: wordId
+      wordId: wordId,
     },
     orderBy: {
       dateAdded: 'asc'
@@ -702,7 +763,8 @@ app.post('/api/createCard', async(req, res) => {
   if (!foundAccnt) {
     return res.status(403).json({error: 'invalid credentials'})
   }
-  const card = req.body.data;
+  const card = req.body.card;
+  const cardType = req.body.cardType 
 
   // we have to link it to the account and the word the card is for
   // therefore, we use the 'connect' option
@@ -711,6 +773,7 @@ app.post('/api/createCard', async(req, res) => {
       cardData: card.cardData,
       dateAdded: card.dateAdded,
       knownLevel: card.knownLevel,
+      cardType: cardType,
       lastReviewed: card.lastReviewed,
       timeDue: card.timeDue,
       account: {
@@ -820,9 +883,10 @@ app.get('/api/searchDictionary', async(req, res) => {
   const skip = Number(req.query.skip);
   const take = Number(req.query.take);
 
-  const searchRes = searchDictionary(queryStr, skip, take);
+  const searchRes = await searchDictionary(queryStr, skip, take);
+  // console.log(searchRes);
   
-
+  res.json(searchRes)
 })
 
 

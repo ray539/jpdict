@@ -5,6 +5,11 @@ export enum DeckSelectionStrat {
   RANDOM
 }
 
+export enum CardType {
+  VOCAB,
+  SENTENCE
+}
+
 export interface Account {
   id: string;
   username: string;
@@ -68,7 +73,28 @@ export interface Card {
   wordId: string;
   cardData: CardData;
   knownLevel: number;
+  cardType: CardType;
   lastReviewed: Date | null;
   timeDue: Date
   dateAdded: Date;
+}
+
+export interface SearchResult {
+  word: Word,
+  matchLvl: number
+}
+
+export function knownLevelToColorDescription(knownLevel: number | null) {
+  let kanjiColor = 'black';
+  let def = '';
+  if (knownLevel != null) {
+    if (knownLevel == 0) {
+      kanjiColor = 'blue'
+      def = '(known level 0, new)'
+    } else {
+      kanjiColor = 'forestgreen'
+      def = `(known level ${knownLevel}})`
+    }
+  }
+  return {kanjiColor: kanjiColor, def: def}
 }

@@ -74,7 +74,7 @@ function Dashboard() {
 
 export function Dashboard_() {
   const authContext = useContext(AuthContext)
-
+  
   return (
     authContext.account ? <Dashboard /> : <div>you must login to access this feature</div>
   )

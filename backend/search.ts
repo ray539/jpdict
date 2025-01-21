@@ -360,7 +360,6 @@ export async function searchDictionary(queryStr: string, skip: number, take: num
   
   
   result = result.filter(obj => obj.matchLvl !== null)
-  
   result = result.sort((obj1, obj2) => -(obj1.matchLvl! - obj2.matchLvl!))
   
   // skip..skip + take

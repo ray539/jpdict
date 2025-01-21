@@ -286,7 +286,7 @@ async function deleteAllCards() {
 }
 
 async function main() {
-  customSentence_1()
+  await reset()
 
 }
 

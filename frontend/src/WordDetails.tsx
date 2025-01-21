@@ -1,17 +1,18 @@
-import { useContext, useEffect, useState } from "react";
+import { ReactNode, useContext, useEffect, useState } from "react";
 import { AuthContext } from "./context/AuthContextProvider";
 import { Link, useSearchParams } from "react-router-dom";
-import { ExampleSentence, knownLevelToColorDescription, Word } from "../../global";
+import { checkSentenceInput, ExampleSentence, knownLevelToColorDescription, Word } from "../../global";
 import { addCustomSentenceForWord, deleteCustomSentenceForWord, getCustomSentencesForWord, getExampleSentencesForWord, getWord } from "./service/requestHelper";
 
 
-function SentenceListItem({sentence, showDeleteButton = false, onDelete}: {sentence: ExampleSentence, showDeleteButton?: boolean, onDelete?: Function}) {
+export function SentenceListItem({sentence, showDeleteButton = false, onDelete, extraButtons = []}: {sentence: ExampleSentence, showDeleteButton?: boolean, onDelete?: Function, extraButtons?: ReactNode[]}) {
   return (
-    <div style={{border: '1px solid black', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5em'}}>
+    <div style={{border: '1px solid black', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5em', backgroundColor: 'whitesmoke'}}>
       <div>
         <div>{sentence.jpn}</div>
         <div>{sentence.eng}</div>
       </div>
+      {extraButtons}
       {
         showDeleteButton ?
           <div>
@@ -180,18 +181,12 @@ function WordDetails() {
             <b>add a sentence</b>
             <form style={{marginBottom: '1em'}} onSubmit={async (e) => {
               e.preventDefault();
-              if (!jpn_input) {
-                window.alert('jpn input is empty')
+              let res = checkSentenceInput(jpn_input, word)
+              if ('error' in res) {
+                window.alert(res.error);
                 return;
               }
-              const wordsToMatch = [word.kanji].concat(word.kanjiOther);
-              // see if 'jpn_input' contains the word
-              const foundWordForm = wordsToMatch.find(w => jpn_input.includes(w))
-              if (!foundWordForm) {
-                window.alert(`word "${wordsToMatch}" not in sentence`)
-                return;
-              }
-
+              const foundWordForm = res.foundWordForm;
               await addCustomSentenceForWord(acct.username, acct.password, wordId, jpn_input, eng_inp, foundWordForm);
               const newCustomSentences = await getCustomSentencesForWord(acct.username, acct.password, wordId);
               if ('error' in newCustomSentences) {
@@ -215,7 +210,7 @@ function WordDetails() {
               <button>submit</button>
             </form>
             <h2>actions</h2>
-            <button style={{backgroundColor: 'lightblue'}} onClick={(e) => window.open('/cards-for-word')}>view / create cards</button>
+            <button style={{backgroundColor: 'lightblue'}} onClick={(e) => window.open(`/cards-for-word/?wordId=${wordId}`)}>view / create cards</button>
             <button style={{backgroundColor: 'lightblue'}}>add word to deck</button>
 
 

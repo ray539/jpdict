@@ -65,7 +65,7 @@ async function getCardFromWord(word: Word, acct: Account, timestamp: number) {
       definitions: word.definitions.map((def, i) => `${i + 1}. ${def.glosses.join(';')}. ${def.positions.join(', ')}`).join('\n'),
       exampleSentences: []
     },
-    cardType: CardType.VOCAB,
+    cardType: 'VOCAB',
     knownLevel: 0,
     lastReviewed: null,
     timeDue: new Date(currTimestamp + 1800 * 1000), // due half an hour from now
@@ -258,7 +258,8 @@ function CardView({wIndex, cIndex} : {wIndex: number, cIndex: number}) {
               jpn: jpn_input,
               eng: eng_inp,
               default_word_wordForm: foundWordForm,
-              default_wordId: pageState.words![wIndex].wordId
+              default_wordId: pageState.words![wIndex].wordId,
+              custom: true
             }
             updatePageState(old => {
               old.words![wIndex].cards![cIndex].card!.cardData.exampleSentences.push(newSentence)
@@ -279,7 +280,7 @@ function CardView({wIndex, cIndex} : {wIndex: number, cIndex: number}) {
               old.words![wIndex].cards![cIndex].card!.dateAdded = new Date(timeContext.getCurrentTimestamp());
             })
             let card = pageState.words![wIndex].cards![cIndex]!.card!;
-            const res = await createCard(acct.username, acct.password, card, CardType.VOCAB);
+            const res = await createCard(acct.username, acct.password, card, 'VOCAB');
             console.log('created card:');
             console.log(res);
 

@@ -5,10 +5,11 @@ export enum DeckSelectionStrat {
   RANDOM
 }
 
-export enum CardType {
-  VOCAB,
-  SENTENCE
-}
+// export enum CardType {
+//   VOCAB,
+//   SENTENCE
+// }
+export type CardType = 'VOCAB' | 'SENTENCE'
 
 export interface Account {
   id: string;
@@ -49,12 +50,14 @@ export interface Word {
   knownLevel: number
 }
 
+
 export interface ExampleSentence {
   id: string;
   jpn: string;
   eng: string;
   default_word_wordForm: string;
   default_wordId: string;
+  custom: boolean;
 }
 
 export interface CardData {
@@ -97,4 +100,18 @@ export function knownLevelToColorDescription(knownLevel: number | null) {
     }
   }
   return {kanjiColor: kanjiColor, def: def}
+}
+
+export function checkSentenceInput(jpn_input: string, word: Word) {
+  if (!jpn_input) {
+    return {error: 'jpn input is empty'};
+  }
+  
+  const wordsToMatch = [word.kanji].concat(word.kanjiOther);
+  // see if 'jpn_input' contains the word
+  const foundWordForm = wordsToMatch.find(w => jpn_input.includes(w))
+  if (!foundWordForm) {
+    return  {error: `word "${wordsToMatch}" not in sentence`}
+  }
+  return {foundWordForm: foundWordForm}
 }

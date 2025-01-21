@@ -167,7 +167,11 @@ export async function getCustomSentencesForWord(username: string, password: stri
         wordId: wordId
       }
     })
-    return res.data as ExampleSentence[];
+    let tmp = res.data as ExampleSentence[];
+    for (let x of tmp) {
+      x.custom = true;
+    }
+    return tmp;
   } catch (e) {
     return extractError(e)
   }
@@ -238,6 +242,7 @@ export async function getWord(username: string, password: string, wordId: string
 function fixDatesOnCard(card: Card) {
   card.lastReviewed = card.lastReviewed ? new Date(card.lastReviewed) : null;
   card.timeDue = new Date(card.timeDue)
+  card.dateAdded = new Date(card.dateAdded)
   return card;
 }
 
@@ -332,7 +337,11 @@ export async function getExampleSentencesForWord(username: string, password: str
         wordId: wordId
       }
     })
-    return res.data as ExampleSentence[];
+    let tmp = res.data as ExampleSentence[];
+    for (let x of tmp) {
+      x.custom = false;
+    }
+    return tmp;
   } catch (e) {
     return extractError(e)
   }
@@ -359,7 +368,7 @@ export async function createCard(username: string, password: string, card: Card,
   try {
     const res = await axios.post(`${BASEURL}/api/createCard`, 
       {
-        cardData: card,
+        card: card,
         cardType: cardType
       },
       {

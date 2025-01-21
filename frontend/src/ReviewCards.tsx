@@ -10,6 +10,7 @@ const CARD: Card = {
   "id": "0d6a8aca-88bc-462a-a9b6-47172bc37fad",
   "accountId": "4130041f-cdd0-4ae3-9d06-aac61e45dc9d",
   "wordId": "00e48c0e-4c41-4a68-9782-cf5834458b57",
+  cardType: 'SENTENCE',
   "cardData": {
       "kanji": "部門",
       "reading": "ぶもん",

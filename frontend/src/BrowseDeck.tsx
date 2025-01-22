@@ -36,47 +36,53 @@ import { WordListItem } from "./Search";
 //   </div>
 // )
 
-function WordsView({words, onDeleteWord, extraButtons} : {words: Word[], onDeleteWord? : (w: Word) => Promise<void>, extraButtons?: ReactNode}) {
-  const authContext = useContext(AuthContext);
-  const acct = authContext.account!;
+// function WordsView({words, deleteButton, onDeleteWord, extraButtons} : {words: Word[], deleteButton: boolean, onDeleteWord : (w: Word) => Promise<void>, extraButtons: ReactNode[]}) {
+//   const authContext = useContext(AuthContext);
+//   const acct = authContext.account!;
+//   return (
+//     <>
+
+//     </>
+//   )
+// }
+
+const WORDS_PER_PAGE = 10
+
+export function DeckInfoAndPageChange({deckInfo, pageIdx, setPageIdx} : {deckInfo: TDeckInfo, pageIdx: number, setPageIdx: (v: number) => void}) {
+  const NUMPAGES = Math.floor(deckInfo.totalWords / WORDS_PER_PAGE)
   return (
     <>
-      {
-        words.map(w => {
-          return (
-            <WordListItem 
-              word={w}
-              showOptionsPanel={false}
-              onClickEllipsis={() => {}}
-              extraButtons={extraButtons}
-            />
-          )
-        })
-      }
+      <div>total words: {deckInfo ? deckInfo.totalWords : 'NA'}</div>
+      <div>known words: {deckInfo ? deckInfo.knownWords : 'NA'}</div>
+      <div style={{display: 'flex', justifyContent: 'space-between', border: '1px solid black', padding: '0.5em', marginBottom: '0.5em'}}>
+        <div style={{display: 'flex', alignItems: 'center'}}>
+        
+          <div>page: {pageIdx} / {NUMPAGES ? NUMPAGES : 'NA'}</div>
+          <button disabled={pageIdx == 0} onClick={() => {setPageIdx(Math.max(0, pageIdx - 1))}}>
+            ←
+          </button>
+          <button disabled={NUMPAGES != null && Number(pageIdx) == NUMPAGES} onClick={() => setPageIdx(Math.min(NUMPAGES, pageIdx + 1))}>
+            →
+          </button>
+          
+        </div>
+        <div>
+          filter:
+          <input type='text'></input>
+        </div>
+      </div>
     </>
   )
 }
 
-const WORDS_PER_PAGE = 10
-
 /**
  * given a TDeckInfo object, and options to control pageIdx, display the deck
+ * deleteButton: show delete button or not
  */
-function DeckView({deckInfo, pageIdx, setPageIdx, extraButtonsOnWords} : {deckInfo :  TDeckInfo, pageIdx : number, setPageIdx: (v: number) => void, extraButtonsOnWords?: ReactNode}) {
+function DeckView({deckInfo, pageIdx, setPageIdx} : {deckInfo :  TDeckInfo, pageIdx : number, setPageIdx: (v: number) => void}) {
   const authContext = useContext(AuthContext);
   const acct = authContext.account!;
   const [words, setWords] = useState<Word[]>();
-
-  async function onDeleteWord(w : Word) {
-    if (window.confirm(`are you sure you want to delete the word ${w.kanji} from your deck?`)) {
-      let res = await deleteWordFromDeck(acct.username, acct.password, deckInfo.id, w.id);
-      if ('error' in res) {
-        window.alert(res)
-        return;
-      }
-      await fetchAndSetWords()
-    }
-  }
 
   async function fetchAndSetWords() {
     const fetchedWords = await getWordsInDeck(acct.username, acct.password, deckInfo.id, Number(pageIdx) * WORDS_PER_PAGE, WORDS_PER_PAGE);
@@ -87,43 +93,45 @@ function DeckView({deckInfo, pageIdx, setPageIdx, extraButtonsOnWords} : {deckIn
     setWords(fetchedWords)
   }
 
+  async function onDeleteWord(w : Word) {
+    if (window.confirm(`are you sure you want to delete the word ${w.kanji} from your deck?`)) {
+      let res = await deleteWordFromDeck(acct.username, acct.password, deckInfo!.id, w.id);
+      if ('error' in res) {
+        window.alert(res)
+        return;
+      }
+    }
+    fetchAndSetWords()
+  }
+
   useEffect(() => {
     fetchAndSetWords();
   }, [pageIdx]);
 
-  const NUMPAGES = Math.floor(deckInfo.totalWords / WORDS_PER_PAGE)
-
   return (
     <>
-      <div style={{border: '1px solid red', minHeight: '30vh', padding:'1em'}}>
-        <h2>deckname: {deckInfo ? deckInfo.name : 'NA'}</h2>
-        <div>total words: {deckInfo ? deckInfo.totalWords : 'NA'}</div>
-        <div>known words: {deckInfo ? deckInfo.knownWords : 'NA'}</div>
-        <div style={{display: 'flex', justifyContent: 'space-between', border: '1px solid black', padding: '0.5em', marginBottom: '0.5em'}}>
-          <div style={{display: 'flex', alignItems: 'center'}}>
-          
-            <div>page: {pageIdx} / {NUMPAGES ? NUMPAGES : 'NA'}</div>
-            <button disabled={pageIdx == 0} onClick={() => {setPageIdx(Math.max(0, pageIdx - 1))}}>
-              ←
-            </button>
-            <button disabled={NUMPAGES != null && Number(pageIdx) == NUMPAGES} onClick={() => setPageIdx(Math.min(NUMPAGES, pageIdx + 1))}>
-              →
-            </button>
-            
-          </div>
-          <div>
-            filter:
-            <input type='text'></input>
-          </div>
-        </div>
-        {
-          words ?
-            <WordsView words={words} onDeleteWord={onDeleteWord} extraButtons={extraButtonsOnWords}/>
-          :
-            <div>fetching...</div>
-        }
-        
-      </div>
+      <DeckInfoAndPageChange deckInfo={deckInfo} pageIdx={pageIdx} setPageIdx={setPageIdx}/>
+      {
+        words ?
+          words.map(w => {
+            return (
+              <WordListItem 
+                word={w}
+                showOptionsPanel={false}
+                onClickEllipsis={() => {}}
+                extraButtons={
+                  [
+                    <button onClick={() => onDeleteWord(w)} style={{backgroundColor: 'pink'}}>
+                      delete {/*TODO: also update deck info*/}
+                    </button>
+                  ]
+                }
+            />
+            )
+          })
+        :
+          <div>fetching...</div>
+      }
     </>
   )
 }
@@ -163,12 +171,10 @@ function BrowseDeck() {
         deckId ?
           deckInfo ?
             pageIdx != null ?
-              <DeckView deckInfo={deckInfo} pageIdx={pageIdx} setPageIdx={setPageIdx} extraButtonsOnWords={
-                [  
-                  <button style={{backgroundColor: 'pink'}} onClick={() => {
-                  }}>delete</button>
-                ]
-              }/>
+              <div style={{border: '1px solid red', minHeight: '30vh', padding:'1em'}}>
+                <h2>deckname: {deckInfo ? deckInfo.name : 'NA'}</h2>
+                <DeckView deckInfo={deckInfo} pageIdx={pageIdx} setPageIdx={setPageIdx}/>
+              </div>
             :
             <div>query parameter pageIdx missing</div>
           :

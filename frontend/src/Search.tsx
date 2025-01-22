@@ -85,6 +85,22 @@ export function WordListItem({word, showOptionsPanel, onClickEllipsis, options, 
   )
 }
 
+export function SearchBar({searchBarInput, setSearchBarInput, onSearch} : {searchBarInput: string, setSearchBarInput: (v: string) => void, onSearch: () => void}) {
+
+  return (
+    <div style={{display: 'flex', justifyContent: 'space-between', border: '1px solid black', padding: '0.5em', marginBottom: '0.5em'}}>
+      <form onSubmit={(e) => {
+        e.preventDefault()
+        onSearch()
+      }}>
+        search terms: 
+        <input type='text' value={searchBarInput} onChange={(e) => setSearchBarInput(e.target.value)}></input>
+        <button>more filters</button>
+        <button type='submit' style={{backgroundColor: 'skyblue'}} >search</button>
+      </form>
+    </div>
+  )
+}
 
 const NUM_WORDS_PER_PAGE = 10
 function Search() {
@@ -98,6 +114,18 @@ function Search() {
 
   const [searchBarInput, setSearchBarInput] = useState<string>('');
   const navigate = useNavigate();
+
+  const onSearch = async() => {
+    if (searchBarInput.length < 2 || searchBarInput.replace(/\s+/, '').length < 2) {
+      window.alert('please edit your search string')
+      return;
+    }
+    setSearchParams(old => {
+      old.set('searchStr', searchBarInput);
+      old.set('pageIdx', '0');
+      return old
+    })
+  }
 
   async function fetchAndSetWordInfos() {
     if (!searchStr) return;
@@ -118,27 +146,9 @@ function Search() {
     <>
     <div style={{border: '1px solid red', minHeight: '30vh', padding:'1em'}} onClick={() => setExpandedOption(null)}>
       <h2>search dictionary</h2>
-      <div style={{display: 'flex', justifyContent: 'space-between', border: '1px solid black', padding: '0.5em', marginBottom: '0.5em'}}>
-      <form onSubmit={(e) => {
-        e.preventDefault()
-        if (searchBarInput.length < 2 || searchBarInput.replace(/\s+/, '').length < 2) {
-          window.alert('please edit your search string')
-          return;
-        }
-        setSearchParams(old => {
-          old.set('searchStr', searchBarInput);
-          old.set('pageIdx', '0');
-          return old
-        })
-        
-      }}>
-        search terms: 
-        <input type='text' value={searchBarInput} onChange={(e) => setSearchBarInput(e.target.value)}></input>
-        <button>more filters</button>
-        <button type='submit' style={{backgroundColor: 'skyblue'}} >search</button>
-      </form>
-    </div>
-    {
+      <SearchBar onSearch={onSearch} searchBarInput={searchBarInput} setSearchBarInput={setSearchBarInput}/>
+
+      {
         wordInfos ?
           wordInfos.length > 0 ?
           wordInfos.map((wi, i) => <WordListItem word={wi.word} showOptionsPanel={expandedOption === i} onClickEllipsis={() => {

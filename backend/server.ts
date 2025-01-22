@@ -731,6 +731,7 @@ app.get('/api/getCard', async(req, res) => {
   const cardId = req.query.cardId as string;
   const word = await prisma.card.findFirst({
     where: {
+      accountId: foundAccnt.id,
       id: cardId
     }
   })

@@ -9,7 +9,7 @@ interface Option {
   fctn: Function
 }
 
-function WordListItem({word, showOptionsPanel, onClickEllipsis, options, extraButtons} : {word: Word, showOptionsPanel: boolean, onClickEllipsis: () => void, options?: Option[], extraButtons?: ReactNode}) {
+export function WordListItem({word, showOptionsPanel, onClickEllipsis, options, extraButtons} : {word: Word, showOptionsPanel: boolean, onClickEllipsis: () => void, options?: Option[], extraButtons?: ReactNode}) {
 
   const [showDetails, setShowDetails] = useState(false)
   // const [showOptions, setShowOptions] = useState(false)
@@ -17,16 +17,13 @@ function WordListItem({word, showOptionsPanel, onClickEllipsis, options, extraBu
   const height = elementRef.current ? elementRef.current.offsetHeight : 0
 
   const {kanjiColor, def} = knownLevelToColorDescription(word.knownLevel)
-  console.log(kanjiColor);
-  console.log(def);
-  
   
   return (
     <>
       <div ref={elementRef} style={{border: '1px solid black', padding: '0.5em', color: kanjiColor, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative'}}>
         
         <div style={{display: 'flex'}}>
-          {word.seqNum ? <div style={{border: '1px solid black', padding: '0.1em'}}> {word.seqNum}</div> : ''}
+          {word.seqNum != null ? <div style={{border: '1px solid black', padding: '0.1em'}}> {word.seqNum}</div> : ''}
           <div style={{border: '1px solid black', fontSize: '20px', marginLeft: '1em', backgroundColor: 'whitesmoke', color: kanjiColor}}>
             {word.kanji}
           </div>
@@ -38,7 +35,6 @@ function WordListItem({word, showOptionsPanel, onClickEllipsis, options, extraBu
           {extraButtons}
           <button style={{marginLeft: '1em'}} onClick={() => setShowDetails(!showDetails)}>details: {showDetails ? '▲' : '▼'}</button>
           <button style={{marginLeft: '1em'}} onClick={(e) => {e.preventDefault(); e.stopPropagation(); onClickEllipsis()}}>...</button>
-          
         </div>
         {
           showOptionsPanel ?

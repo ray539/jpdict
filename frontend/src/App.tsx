@@ -14,6 +14,7 @@ import { BrowseDeck_ } from './BrowseDeck';
 import { Search_ } from './Search';
 import { WordDetails_ } from './WordDetails';
 import { CardsForWord_ } from './CardsForWord';
+import { NewWords2_ } from './NewWords2';
 // DEBUG
 // import { increment_days, increment_hours, now_ } from './stubDate';
 
@@ -174,6 +175,7 @@ function App() {
               <Route path="/dashboard" element={<Dashboard_/>} />
               <Route path="/search" element={<Search_ />} />
               <Route path="/new-words/*" element={<NewWords_/>} />
+              <Route path="/new-words2/*" element={<NewWords2_ />} />
               <Route path="/review-cards/*" element={<ReviewCards_ />} />
               <Route path="/browse-deck/*" element={<BrowseDeck_ />} />
               <Route path="/word-details/*" element={<WordDetails_ />} />

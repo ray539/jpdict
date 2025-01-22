@@ -54,11 +54,15 @@ async function createDeck(accountId: string, name: string, priority: number, wor
       seqNum: i
     }
   })
-
   await prisma.belongsToWordDeck.createMany({
     data: data
   });
 }
+
+//TODO!!!
+app.post('/api/createDeck', async (req, res) => {
+
+})
 
 app.post('/api/register', async (req, res) => {
   const body = req.body;

@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import axios, { AxiosResponse } from 'axios'
 import { addCustomSentenceForWord, changeWordKnownLevel, deleteCustomSentenceForWord, deleteWordFromDeck, getCard, getCardsForWord, getCustomSentencesForWord, getDeckInfo, getDueCards, getExampleSentencesForWord, getNewWordsList, getTDeckListForUser, getWord, getWordKnownLevel, getWordsInDeck, register, searchDictionary, setBaseUrl  } from '../../frontend/src/service/requestHelper'
 import { log } from "console";
+import {createDeck} from '../server'
 const prisma = new PrismaClient();
 // const BASEURL = 'http://localhost:3004'
 
@@ -287,7 +288,6 @@ async function deleteAllCards() {
 
 async function main() {
   await reset()
-
 }
 
 main()

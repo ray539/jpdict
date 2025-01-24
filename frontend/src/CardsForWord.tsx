@@ -611,6 +611,8 @@ function CardsForWord() {
       {
         word ?
           cards ?
+          <>
+          <h2>cards for word: {word.kanji}</h2>
           <div style={{border: '1px solid red', minHeight: '30vh', padding:'1em', display: 'flex'}}>
             
             <div style={{border: '1px solid black', padding: '0.5em', minWidth: '15em', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between'}}>
@@ -664,6 +666,7 @@ function CardsForWord() {
               }
             </div>
           </div>
+          </>
           :
           <div>fetching cards...</div>
         :

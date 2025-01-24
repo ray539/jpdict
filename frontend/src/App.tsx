@@ -15,6 +15,7 @@ import { Search_ } from './Search';
 import { WordDetails_ } from './WordDetails';
 import { CardsForWord_ } from './CardsForWord';
 import { NewWords2_ } from './NewWords2';
+import { AddsWordsToDeck_ } from './AddWordsToDeck';
 // DEBUG
 // import { increment_days, increment_hours, now_ } from './stubDate';
 
@@ -64,6 +65,7 @@ function Links() {
       <div style={{border: '1px solid blue', padding: '0.5em', marginBottom: '1em'}}>
         DEBUG
         <div>curr time: {new Date(timeContext.getCurrentTimestamp()).toLocaleString()}</div>
+        <div>timestamp: {timeContext.getCurrentTimestamp()}</div>
         <button onClick={() => {timeContext.setTimeStamp(timeContext.getCurrentTimestamp() + 3600 * 1000)}}>inc hour</button>
         <button onClick={() => {timeContext.setTimeStamp(timeContext.getCurrentTimestamp() + 24 * 3600 * 1000)}}>inc day</button>
         <button onClick={() => {timeContext.setTimeStamp(timeContext.getCurrentTimestamp() + 60 * 1000)}}>inc minute</button>
@@ -180,6 +182,7 @@ function App() {
               <Route path="/browse-deck/*" element={<BrowseDeck_ />} />
               <Route path="/word-details/*" element={<WordDetails_ />} />
               <Route path="/cards-for-word/*" element={<CardsForWord_ />}/>
+              <Route path="/add-words-to-deck/*" element={<AddsWordsToDeck_/>}></Route>
               <Route path="/a/:wordId" element={<A/>} />
               <Route path="*" element={<div>App.tsx: page not found</div>}/>
             </Routes>

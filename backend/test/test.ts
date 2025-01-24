@@ -1,8 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 import axios, { AxiosResponse } from 'axios'
-import { addCustomSentenceForWord, changeWordKnownLevel, deleteCustomSentenceForWord, deleteWordFromDeck, getCard, getCardsForWord, getCustomSentencesForWord, getDeckInfo, getDueCards, getExampleSentencesForWord, getNewWordsList, getTDeckListForUser, getWord, getWordKnownLevel, getWordsInDeck, register, searchDictionary, setBaseUrl  } from '../../frontend/src/service/requestHelper'
+import { addCustomSentenceForWord, addWordsToDeck, changeWordKnownLevel, createDeck, deleteCustomSentenceForWord, deleteWordFromDeck, getCard, getCardsForWord, getCustomSentencesForWord, getDeckInfo, getDueCards, getExampleSentencesForWord, getNewWordsList, getTDeckListForUser, getWord, getWordKnownLevel, getWordsInDeck, register, searchDictionary, setBaseUrl, wordIdsToWords  } from '../../frontend/src/service/requestHelper'
 import { log } from "console";
-import {createDeck} from '../server'
+
 const prisma = new PrismaClient();
 // const BASEURL = 'http://localhost:3004'
 
@@ -272,22 +272,60 @@ async function customSentence_1() {
   console.log('here');
   sentences = await getCustomSentencesForWord('a', 'b', word.id);
   console.log(sentences);
-  
-
-
-
-  // await addCustomSentenceForWord('a', 'b', )
-
-
 }
 
+async function createDeck_1() {
+  await reset();
+  console.log('here1');
+  await createDeck('a', 'b', 'created-1', []);
+  const res = await getTDeckListForUser('a', 'b');
+  if ('error' in res) {
+    console.log('failed');
+    return;
+  }
+  console.log(res);
+}
+
+async function wordIdsToWords_1() {
+  await reset();
+  let newWords = await getNewWordsList('a', 'b', 'HIGHEST PRIO', 0);
+  if ('error' in newWords) {
+    console.log('failed');
+    return;
+  }
+  let newWordIds = newWords.map(w => w.id);
+  const res = await wordIdsToWords('a', 'b', newWordIds)
+  console.log(res);
+}
+
+async function addWordsToDeck_1() {
+  await reset();
+  const deckInfos = await getTDeckListForUser('a', 'b');
+  if ('error' in deckInfos) {
+    console.log('failed');
+    return;
+  }
+  const deck = deckInfos[0];
+  console.log(deck);
+  const searchResults = await searchDictionary('a', 'b', 'go', 0, 10);
+  if ('error' in searchResults) {
+    console.log('failed');
+    return;
+  }
+  console.log(searchResults);
+  const wordIds = searchResults.map(sr => sr.word.id)
+  console.log(wordIds.length);
+  console.log(wordIds);
+  const ret = await addWordsToDeck('a', 'b', deck.id, wordIds);
+  console.log(ret);
+}
 
 async function deleteAllCards() {
   await prisma.card.deleteMany()
 }
 
 async function main() {
-  await reset()
+  await addWordsToDeck_1();
 }
 
 main()

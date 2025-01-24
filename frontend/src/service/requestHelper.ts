@@ -37,6 +37,26 @@ export async function login(username: string, password: string) {
   }
 }
 
+export async function createDeck(username: string, password: string, name: string, wordIds: string[]) {
+  try {
+    const res = await axios.post(`${BASEURL}/api/createDeck`,
+     {
+      name: name,
+      wordIds: wordIds,
+     },
+     {
+      headers: {
+        username: username,
+        password: password
+      }
+     }
+    )
+    return res.data as any;
+  } catch (e) {
+    return extractError(e)
+  }
+}
+
 
 export async function register(username: string, password: string) {
   try {
@@ -52,11 +72,12 @@ export async function register(username: string, password: string) {
 
 export async function getDeckInfo(username: string, password: string, deckId: string) {
   try {
-    
     const res = await axios.get(`${BASEURL}/api/getDeckInfo`, {
       headers: {
         username: username,
         password: password,
+      },
+      params: {
         deckId: deckId
       }
     })
@@ -99,6 +120,7 @@ export async function deleteWordFromDeck(username: string, password: string, dec
   }
 }
 
+// TODO fix this route. Wrong format
 export async function deleteWordsFromDeck(username: string, password: string, deckId: string, wordIds: string[]) {
   try {
     const res = await axios.post(`${BASEURL}/api/deleteWordsFromDeck`, {
@@ -112,6 +134,28 @@ export async function deleteWordsFromDeck(username: string, password: string, de
       }
     })
     return res.data;
+  } catch (e) {
+    return extractError(e)
+  }
+}
+
+/**
+ * return how many words were added
+ */
+export async function addWordsToDeck(username: string, password: string, deckId: string, wordIds: string[]) {
+  try {
+    const res = await axios.post(`${BASEURL}/api/addWordsToDeck`, 
+      {
+        deckId: deckId,
+        wordIds: wordIds
+      },
+      {
+      headers: {
+        username: username,
+        password: password,
+      }
+    })
+    return res.data as {count: number};
   } catch (e) {
     return extractError(e)
   }
@@ -265,6 +309,25 @@ export async function getCard(username: string, password: string, cardId: string
       return {error: 'card not found'}
     }
     
+  } catch (e) {
+    return extractError(e)
+  }
+}
+
+export async function wordIdsToWords(username: string, password: string, wordIds: string[]) {
+  try {
+    // console.log(username, password, strategy, timestamp);
+    
+    const res = await axios.get(`${BASEURL}/api/wordIdsToWords`, {
+      headers: {
+        username: username,
+        password: password
+      },
+      params: {
+        wordIds: wordIds,
+      }
+    })
+    return res.data as Word[];
   } catch (e) {
     return extractError(e)
   }

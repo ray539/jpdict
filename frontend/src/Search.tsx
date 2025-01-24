@@ -1,15 +1,16 @@
 import React, { ReactNode, useContext, useEffect, useRef, useState } from "react";
 import { AuthContext } from "./context/AuthContextProvider";
-import { Navigate, Routes, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, Routes, useNavigate, useSearchParams } from "react-router-dom";
 import { knownLevelToColorDescription, SearchResult, Word } from "../../global";
 import { searchDictionary } from "./service/requestHelper";
+import { Dropdown, Modal } from "react-bootstrap";
 
 interface Option {
   label: string,
   fctn: Function
 }
 
-export function WordListItem({word, showOptionsPanel, onClickEllipsis, options, extraButtons} : {word: Word, showOptionsPanel: boolean, onClickEllipsis: () => void, options?: Option[], extraButtons?: ReactNode}) {
+export function WordListItem({word, extraButtons} : {word: Word, extraButtons?: ReactNode[]}) {
 
   const [showDetails, setShowDetails] = useState(false)
   // const [showOptions, setShowOptions] = useState(false)
@@ -17,11 +18,11 @@ export function WordListItem({word, showOptionsPanel, onClickEllipsis, options, 
   const height = elementRef.current ? elementRef.current.offsetHeight : 0
 
   const {kanjiColor, def} = knownLevelToColorDescription(word.knownLevel)
+  const navigate = useNavigate()
   
   return (
     <>
       <div ref={elementRef} style={{border: '1px solid black', padding: '0.5em', color: kanjiColor, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative'}}>
-        
         <div style={{display: 'flex'}}>
           {word.seqNum != null ? <div style={{border: '1px solid black', padding: '0.1em'}}> {word.seqNum}</div> : ''}
           <div style={{border: '1px solid black', fontSize: '20px', marginLeft: '1em', backgroundColor: 'whitesmoke', color: kanjiColor}}>
@@ -34,32 +35,26 @@ export function WordListItem({word, showOptionsPanel, onClickEllipsis, options, 
         <div style={{display: 'flex', alignItems: 'center'}}>
           {extraButtons}
           <button style={{marginLeft: '1em'}} onClick={() => setShowDetails(!showDetails)}>details: {showDetails ? '▲' : '▼'}</button>
-          <button style={{marginLeft: '1em'}} onClick={(e) => {e.preventDefault(); e.stopPropagation(); onClickEllipsis()}}>...</button>
+          <Dropdown style={{marginLeft: '1em'}}>
+            <Dropdown.Toggle variant="success" size="sm">
+              more options
+            </Dropdown.Toggle>
+            <Dropdown.Menu>
+              <Dropdown.Item 
+                onClick={() => {
+                  window.open(`/cards-for-word?wordId=${word.id}&cardIdx=0`, '_blank')
+                }}
+              >
+                view cards
+              </Dropdown.Item>
+              <Dropdown.Item
+                 onClick={() => {
+                  window.open(`/add-words-to-deck?wordIds=["${word.id}"]`, '_blank')
+                }}
+              >add to deck...</Dropdown.Item>
+            </Dropdown.Menu>
+          </Dropdown>
         </div>
-        {
-          showOptionsPanel ?
-          <div style={{border: '1px solid black', width: '7em', position: 'absolute', backgroundColor: 'white', right: '0', top: `${height}px`, zIndex: 10}}>
-            {
-              options ?
-              <>
-                {
-                  options.map(option => {
-                    return <div style={{border: '1px solid black'}} onClick={(e) => {e.preventDefault(); e.stopPropagation(); option.fctn()}}>{option.label}</div>
-                  })
-                }
-              </>
-                // 
-              :
-              <>
-                <div style={{border: '1px solid black'}}>no options</div>
-              </>
-
-            }
-
-          </div>
-          :
-          ''
-        }
 
 
       </div>
@@ -110,7 +105,6 @@ function Search() {
   const pageIdx = Number(searchParams.get('pageIdx'))
   const searchStr = searchParams.get('searchStr')
   const [wordInfos, setWordInfos] = useState<SearchResult[]>();
-  const [expandedOption, setExpandedOption] = useState<number | null>(null)
 
   const [searchBarInput, setSearchBarInput] = useState<string>('');
   const navigate = useNavigate();
@@ -144,24 +138,14 @@ function Search() {
   const NUMPAGES = 3;
   return (
     <>
-    <div style={{border: '1px solid red', minHeight: '30vh', padding:'1em'}} onClick={() => setExpandedOption(null)}>
+    <div style={{border: '1px solid red', minHeight: '30vh', padding:'1em'}}>
       <h2>search dictionary</h2>
       <SearchBar onSearch={onSearch} searchBarInput={searchBarInput} setSearchBarInput={setSearchBarInput}/>
 
       {
         wordInfos ?
           wordInfos.length > 0 ?
-          wordInfos.map((wi, i) => <WordListItem word={wi.word} showOptionsPanel={expandedOption === i} onClickEllipsis={() => {
-            if (expandedOption === i) {
-              setExpandedOption(null)
-            } else {
-              setExpandedOption(i)
-            }
-          }}
-          
-          options={[{label: 'view cards', fctn: () => 1}, {label: 'add to deck', fctn: () => window.open('/add-word-to-deck')}]}
-
-          />)
+          wordInfos.map((wi) => <WordListItem word={wi.word}/>)
           :
           <div>no results found</div>
         :

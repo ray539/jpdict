@@ -3,25 +3,30 @@ import { AuthContext } from "./context/AuthContextProvider";
 import { Link, useNavigate } from "react-router-dom";
 import { TDeckInfo } from "../../global";
 import { getTDeckListForUser_service } from "./service/service";
+import { Button, Form, Modal } from "react-bootstrap";
+import { createDeck } from "./service/requestHelper";
 
 function Dashboard() {
   const authContext = useContext(AuthContext)
+  const acct = authContext.account!
   const [tDeckInfo, setTDeckInfo] = useState<TDeckInfo[] | null>(null);
   const navigate = useNavigate();
   
+  async function fetchAndSetDeckList() {
+    const res = await getTDeckListForUser_service(acct.username as string, acct.password as string );
+    if ('error' in res) {
+      window.alert(res.error);
+      return;
+    }
+    setTDeckInfo(res);
+  }
+
   // get the decks for the user
   useEffect(() => {
-    const todo = async () => {
-      const res = await getTDeckListForUser_service(authContext.account?.username as string, authContext.account?.password as string );
-      if ('error' in res) {
-        window.alert(res.error);
-        setTDeckInfo([])
-        return;
-      }
-      setTDeckInfo(res);
-    }
-    todo();
+    fetchAndSetDeckList()
   }, [])
+
+  const [deckNameInp, setDeckNameInp] = useState('');
 
   return (
     <>
@@ -42,32 +47,51 @@ function Dashboard() {
         <button onClick={() => navigate('/review-cards')}>review due cads</button>
       </div>
       <h2>target word decks</h2>
-      {
-        tDeckInfo ?
-          tDeckInfo.length > 0 ?
-            tDeckInfo.map(tdeckInfo => {
-              return <div style={{border: '1px solid black'}}>
-                <div>
-                  name: {tdeckInfo.name}
-                </div>
-                <div>
-                  totalWords: {tdeckInfo.totalWords}
-                </div>
-                <div>
-                  knownWords: {tdeckInfo.knownWords}
-                </div>
-                <div>
-                  <button onClick={() => {
-                    navigate(`/browse-deck/?deckId=${tdeckInfo.id}&pageIdx=0`)
-                  }}>view / edit deck</button>
-                </div>
-              </div>
-            })
+      <div style={{border: '1px solid black', padding: '0.5em'}}>
+        {
+          tDeckInfo ?
+            tDeckInfo.length > 0 ?
+              tDeckInfo.map(tdeckInfo => {
+                return (
+                  <div key={tdeckInfo.id} style={{border: '1px solid black', backgroundColor:'beige'}}>
+                    <div>
+                      name: {tdeckInfo.name}
+                    </div>
+                    <div>
+                      totalWords: {tdeckInfo.totalWords}
+                    </div>
+                    <div>
+                      knownWords: {tdeckInfo.knownWords}
+                    </div>
+                    <div>
+                      <button onClick={() => {
+                        navigate(`/browse-deck/?deckId=${tdeckInfo.id}&pageIdx=0`)
+                      }}>view / edit deck</button>
+                    </div>
+                  </div>
+                )
+              })
+            :
+            <div>you have no target decks</div>
           :
-          <div>you have no target decks</div>
-        :
-          <div>fetching...</div>
-     }
+            <div>fetching...</div>
+      }
+      </div>
+
+      <h3>create deck</h3>
+      <Form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          await createDeck(acct.username, acct.password, deckNameInp, [])
+          fetchAndSetDeckList()
+        }}
+      >
+        <Form.Label>deck name</Form.Label>
+        <Form.Control value={deckNameInp} onChange={(e) => setDeckNameInp(e.target.value)}/>
+        <button>submit</button>
+      </Form>
+
+     
     </>
   )
 }

@@ -54,14 +54,32 @@ async function createDeck(accountId: string, name: string, priority: number, wor
       seqNum: i
     }
   })
-  await prisma.belongsToWordDeck.createMany({
+  const res = await prisma.belongsToWordDeck.createMany({
     data: data
   });
+  return res;
 }
 
-//TODO!!!
 app.post('/api/createDeck', async (req, res) => {
+  const username = req.headers.username as string;
+  const password = req.headers.password as string;
+  const foundAccnt = await loginAccount(username, password)
+  if (!foundAccnt) {
+    return res.status(403).json({error: 'invalid credentials'})
+  }
+  
+  const name = req.body.name as string
+  const wordIds = req.body.wordIds as string[]
+  // priority: going number of wordDecks + 1
+  const decksForUser = await prisma.wordDeck.findMany({
+    where: {
+      accountId: foundAccnt.id
+    },
+  })
+  const priority = decksForUser.length;
 
+  const ret = await createDeck(foundAccnt.id, name, priority, wordIds);
+  return res.json(ret);
 })
 
 app.post('/api/register', async (req, res) => {
@@ -83,20 +101,25 @@ app.post('/api/register', async (req, res) => {
 
   // create the initial deck for the account
   const fst30Words = (await prisma.word.findMany({take: 100})).map(word => word.id);
-  await createDeck(newAccount.id, 'initialDeck', 1, fst30Words)
+  await createDeck(newAccount.id, 'initialDeck', 0, fst30Words)
   return res.json(newAccount);
 })
 
 app.get('/api/getDeckInfo', async(req, res) => {
   const username = req.headers.username as string
   const password = req.headers.password as string;
-  const deckId = req.headers.deckId as string
+  
   const foundAccnt = await loginAccount(username, password)
   if (!foundAccnt) {
     return res.status(403).json({error: 'invalid credentials'})
   }
 
-  const decks1 = await prisma.wordDeck.findMany({
+  const deckId = req.query.deckId as string | undefined;
+  if (!deckId) {
+    return res.status(403).json({error: 'deck id is missing'});
+  }
+
+  const decks1 = await prisma.wordDeck.findUnique({
     where: {
       id: deckId
     },
@@ -110,7 +133,7 @@ app.get('/api/getDeckInfo', async(req, res) => {
       }
     }
   })
-  const decks2 = await prisma.wordDeck.findMany({
+  const decks2 = await prisma.wordDeck.findUnique({
     where: {
       id: deckId
     },
@@ -137,19 +160,19 @@ app.get('/api/getDeckInfo', async(req, res) => {
     }
   })
 
-  const deckList = decks1.map((o, i) => {
-    return {
-      id: o.id,
-      name: o.name,
-      totalWords: o._count.words,
-      knownWords: decks2[i]._count.words
-    }
-  })
+  if (!decks1 || !decks2) {
+    return res.status(403).json({error: 'invalid deck id'})
+  }
 
-  // console.log('here server');
+  const ret = {
+    id: decks1.id,
+    name: decks1.name,
+    totalWords: decks1._count.words,
+    knownWords: decks2._count.words
+  };
   
 
-  return res.json(deckList[0])
+  return res.json(ret)
 })
 
 /**
@@ -185,6 +208,9 @@ app.get('/api/getTDeckListForUser', async(req, res) => {
           words: true
         },
       }
+    },
+    orderBy: {
+      priority: 'asc'
     }
   })
 
@@ -212,6 +238,9 @@ app.get('/api/getTDeckListForUser', async(req, res) => {
           }
         },
       }
+    },
+    orderBy: {
+      priority: 'asc'
     }
   })
 
@@ -277,6 +306,7 @@ app.delete('/api/deleteWordFromDeck', async (req, res) => {
 
 /**
  * given a list of wordIds, delete them all
+ * TODO: fix this in the 'request' end
  */
 app.post('/api/deleteWordsFromDeck', async (req, res) => {
   const username = req.headers.username as string
@@ -321,6 +351,65 @@ app.post('/api/deleteWordsFromDeck', async (req, res) => {
   });
   res.json({msg: 'OK'})
 })
+
+app.post('/api/addWordsToDeck', async (req, res) => {
+  const username = req.headers.username as string
+  const password = req.headers.password as string;
+  const foundAccnt = await loginAccount(username, password)
+  if (!foundAccnt) {
+    return res.status(403).json({error: 'invalid credentials'})
+  }
+  const deckId = req.body.deckId as string
+  let wordIds = req.body.wordIds as string[]
+  let maxSeqNum = (await prisma.belongsToWordDeck.aggregate({
+    where: {
+      wordDeckId: deckId
+    },
+    _max: {
+      seqNum: true
+    }
+  }))._max.seqNum
+  if (maxSeqNum == undefined) {
+    maxSeqNum = 0;
+  }
+  console.log(deckId);
+  console.log(wordIds);
+  console.log(maxSeqNum);
+  console.log();
+
+  // get set of wordIds in the deck
+  const wordIdsInDeck_ = (await prisma.belongsToWordDeck.findMany({
+    where: {
+      wordDeckId: deckId
+    },
+    select: {
+      wordId: true
+    }
+  })).map(o => o.wordId)
+  const wordIdsInDeck = new Set<string>();
+  for (let wordId of wordIdsInDeck_) {
+    wordIdsInDeck.add(wordId);
+  }
+
+  // filter wordIds
+  wordIds = wordIds.filter(wordId => !wordIdsInDeck.has(wordId))
+  let idGen = maxSeqNum + 1;
+
+  const toCreate = wordIds.map(wordId => {
+    return {
+      wordDeckId: deckId,
+      wordId: wordId,
+      seqNum: idGen++,
+    }
+  });
+
+  const ret = await prisma.belongsToWordDeck.createMany({
+    data: toCreate
+  })
+  
+  res.json(ret);
+})
+
 
 app.put('/api/changeWordKnownLevel', async (req, res) => {
   const username = req.headers.username as string
@@ -472,6 +561,18 @@ async function wordIdsToWords(wordIds: string[], account: any) {
   return words
 }
 
+app.get('/api/wordIdsToWords', async (req, res) => {
+  const username = req.headers.username as string
+  const password = req.headers.password as string;
+  const foundAccnt = await loginAccount(username, password)
+  if (!foundAccnt) {
+    return res.status(403).json({error: 'invalid credentials'})
+  }
+  const wordIds = req.query.wordIds as string[]
+  const words = await wordIdsToWords(wordIds, foundAccnt);
+  res.json(words)
+})
+
 /**
  * body: {
  *  strategy: string
@@ -505,6 +606,8 @@ app.get('/api/getNewWordsList', async (req, res) => {
 
   if (newWordList && now.getTime() - newWordList.date.getTime() <= DAY_LENGTH) {
     console.log('return cached');
+    console.log(newWordList.date.getTime());
+    
     const newWordIds = newWordList.wordList as string[];
     const cachedWords = await wordIdsToWords(newWordIds, foundAccnt);
     return res.json(cachedWords)
@@ -515,13 +618,14 @@ app.get('/api/getNewWordsList', async (req, res) => {
     console.log('get new list');
     const deck = await prisma.wordDeck.findFirst({
       where: {
-        priority: 1,
+        priority: 0, // first deck
         accountId: foundAccnt.id
       }
     })
     if (!deck) {
       return res.json({msg: 'no target decks found'})
     }
+
     const words_ = await prisma.belongsToWordDeck.findMany({
       where: {
         word: {
@@ -542,18 +646,34 @@ app.get('/api/getNewWordsList', async (req, res) => {
       take: NUM_NEW_WORDS
     })
     const wordIds = words_.map(obj => obj.wordId);
-    await prisma.newWordList.deleteMany({
+    // TODO:
+    // change creation of newWordList to updating
+    prisma.newWordList.upsert({
       where: {
         accountId: foundAccnt.id
-      }
-    })
-    await prisma.newWordList.create({
-      data: {
+      },
+      update: {
+        // accountId: foundAccnt.id,        
+        date: now,
+        wordList: wordIds
+      },
+      create: {
         accountId: foundAccnt.id,        
         date: now,
         wordList: wordIds
       }
     })
+
+    // await prisma.newWordList.upsert({
+    //   where: {
+    //     accountId: foundAccnt.id
+    //   }
+    //   update: {
+    //     accountId: foundAccnt.id,        
+    //     date: now,
+    //     wordList: wordIds
+    //   }
+    // })
     const words = await wordIdsToWords(wordIds, foundAccnt);
     res.json(words)
   } else if (strategy == 'RANDOM') {

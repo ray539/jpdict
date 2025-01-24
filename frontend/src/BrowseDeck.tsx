@@ -113,22 +113,23 @@ function DeckView({deckInfo, pageIdx, setPageIdx} : {deckInfo :  TDeckInfo, page
       <DeckInfoAndPageChange deckInfo={deckInfo} pageIdx={pageIdx} setPageIdx={setPageIdx}/>
       {
         words ?
-          words.map(w => {
-            return (
-              <WordListItem 
-                word={w}
-                showOptionsPanel={false}
-                onClickEllipsis={() => {}}
-                extraButtons={
-                  [
-                    <button onClick={() => onDeleteWord(w)} style={{backgroundColor: 'pink'}}>
-                      delete {/*TODO: also update deck info*/}
-                    </button>
-                  ]
-                }
-            />
-            )
-          })
+          words.length > 0 ?
+            words.map(w => {
+              return (
+                <WordListItem 
+                  word={w}
+                  extraButtons={
+                    [
+                      <button onClick={() => onDeleteWord(w)} style={{backgroundColor: 'pink'}}>
+                        delete {/*TODO: also update deck info*/}
+                      </button>
+                    ]
+                  }
+              />
+              )
+            })
+          :
+          <div>there are currently no words in this deck. Why not add some?</div>
         :
           <div>fetching...</div>
       }
@@ -161,9 +162,11 @@ function BrowseDeck() {
   }
   
   useEffect(() => {
-   onMount() 
+   onMount()
   }, [])
 
+  
+    
 
   return (
     <>

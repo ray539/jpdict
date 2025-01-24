@@ -43,8 +43,6 @@ function SpecificDeck({deckInfo, words, setWords} : {deckInfo : TDeckInfo, words
             return (
               <WordListItem 
                 word={w}
-                showOptionsPanel={false}
-                onClickEllipsis={() => {}}
                 extraButtons={
                   [
                     <button 
@@ -167,8 +165,6 @@ function AddFromDictionary({words, setWords} : {words: Word[], setWords: (v:Word
           wordInfos.map((wi, i) => 
             <WordListItem 
               word={wi.word} 
-              onClickEllipsis={()=> {}} 
-              showOptionsPanel={false} 
               extraButtons={
                 [
                   <button 

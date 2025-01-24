@@ -24,7 +24,8 @@ const CARD: Card = {
               "eng": "History is a branch of the humanities.",
               "jpn": "歴史学は人文科学の一部門である。",
               "default_wordId": "00e48c0e-4c41-4a68-9782-cf5834458b57",
-              "default_word_wordForm": "部門"
+              "default_word_wordForm": "部門",
+              custom: true
           }
       ]
   },

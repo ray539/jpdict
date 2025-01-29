@@ -1,2 +1,2 @@
 select *
-from word
+from newwordlist

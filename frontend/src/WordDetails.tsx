@@ -3,6 +3,7 @@ import { AuthContext } from "./context/AuthContextProvider";
 import { Link, useSearchParams } from "react-router-dom";
 import { checkSentenceInput, ExampleSentence, knownLevelToColorDescription, Word } from "../../global";
 import { addCustomSentenceForWord, deleteCustomSentenceForWord, getCustomSentencesForWord, getExampleSentencesForWord, getWord } from "./service/requestHelper";
+import { Card, Container } from "react-bootstrap";
 
 
 export function SentenceListItem({sentence, showDeleteButton = false, onDelete, extraButtons = []}: {sentence: ExampleSentence, showDeleteButton?: boolean, onDelete?: Function, extraButtons?: ReactNode[]}) {
@@ -75,7 +76,7 @@ export function WordView({word, otherButtons} :  {word: Word, otherButtons?: Rea
 
   return (
       <>
-        <div style={{border: '1px solid red', minHeight: '30vh', padding:'1em'}}>
+
           {
             <>
               <h1 style={{fontSize: 50}}><ruby>{word.kanji}<rt>{word.reading}</rt></ruby> </h1>
@@ -200,7 +201,6 @@ export function WordView({word, otherButtons} :  {word: Word, otherButtons?: Rea
               {otherButtons}
             </>
           }
-      </div>
     </>
   )
 }
@@ -234,13 +234,29 @@ function WordDetails() {
   return (
     wordId ?
       word ?
-        <WordView 
-          word={word}
-          otherButtons={[
-            <button style={{backgroundColor: 'lightblue'}} onClick={(e) => window.open(`/cards-for-word/?wordId=${word.id}`)}>view / create cards</button>,
-            <button style={{backgroundColor: 'lightblue'}}>add word to deck</button>
-          ]}
-        />
+        <>
+          <Container fluid className="border border-black mb-5" style={{backgroundColor: 'lightblue'}}>
+            <h1>WORD DETAILS</h1>
+          </Container>
+          <Container>
+            <Card>
+              <Card.Header>
+                <div className='h4'>word info</div>
+              </Card.Header>
+              <Card.Body>
+                <WordView 
+                  word={word}
+                  otherButtons={[
+                    <button style={{backgroundColor: 'lightblue'}} onClick={(e) => window.open(`/cards-for-word/?wordId=${word.id}`)}>view / create cards</button>,
+                    <button style={{backgroundColor: 'lightblue'}}>add word to deck</button>
+                  ]}
+                />
+              </Card.Body>
+            </Card>
+
+          </Container>
+
+        </>
       :
       <div>fetching...</div>
     :
@@ -255,10 +271,8 @@ export function WordDetails_() {
   return (
     authContext.account ? 
     <>
-      <h1>word details</h1>
       <WordDetails/>
     </>
-    
     :
     <div>you must log in to use this feature</div>
   )

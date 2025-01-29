@@ -47,7 +47,7 @@ async function getTDeckListForUser_afterKnownWordChange() {
   
   const wordIds = [words[0].id, words[1].id, words[2].id]
   for (let wordId of wordIds) {
-    await changeWordKnownLevel('a', 'b', wordId, '1');
+    await changeWordKnownLevel('a', 'b', wordId, 1);
   }
   decks = await getTDeckListForUser('a', 'b');
   if ('error' in decks) {
@@ -74,7 +74,7 @@ async function getWordKnownLevel_afterSet() {
     console.log(words)
     return;
   }
-  await changeWordKnownLevel('a', 'b', words[0].id, '1');
+  await changeWordKnownLevel('a', 'b', words[0].id, 1);
 
   const k0 = await getWordKnownLevel('a', 'b', words[0].id)
   console.log(k0);
@@ -185,7 +185,7 @@ async function getWordsInDeck_1() {
   // make first 5 words known
   for (let i = 0; i < 5; i++) {
     console.log(words[i].kanji);
-    await changeWordKnownLevel('a', 'b', words[i].id, '0');
+    await changeWordKnownLevel('a', 'b', words[i].id, 0);
   }
 
   words = await getWordsInDeck('a', 'b', deck.id, 0, 1000)
@@ -247,7 +247,7 @@ async function deleteWordFromDeck_1() {
 
 async function searchDictionary_1() {
   await reset();
-  const result = await searchDictionary('a', 'b', 'opinion', 0, 10);
+  const result = await searchDictionary('a', 'b', 'gozen', 0, 10);
   console.log(result);
 }
 
@@ -325,7 +325,7 @@ async function deleteAllCards() {
 }
 
 async function main() {
-  await addWordsToDeck_1();
+  await reset()
 }
 
 main()

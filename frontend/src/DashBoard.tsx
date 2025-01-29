@@ -3,7 +3,7 @@ import { AuthContext } from "./context/AuthContextProvider";
 import { Link, useNavigate } from "react-router-dom";
 import { TDeckInfo } from "../../global";
 import { getTDeckListForUser_service } from "./service/service";
-import { Button, Form, Modal } from "react-bootstrap";
+import { Button, Card, Col, Container, Form, Modal, ProgressBar, Row } from "react-bootstrap";
 import { createDeck } from "./service/requestHelper";
 
 function Dashboard() {
@@ -30,66 +30,107 @@ function Dashboard() {
 
   return (
     <>
-      <h1>Dashboard</h1>
-      <div>
-        Your current learning progress is
-      </div>
-      <div style={{fontSize: 50}}>
-        50%
-      </div>
-      <div>you haven't completed your daily goal of 10 new words yet</div>
-      <div>
-        <Link to="/new-words2?wordIdx=0">
-          <button>learn new words</button>
-        </Link>
-      </div>
-      <div>
-        <button onClick={() => navigate('/review-cards')}>review due cads</button>
-      </div>
-      <h2>target word decks</h2>
-      <div style={{border: '1px solid black', padding: '0.5em'}}>
-        {
-          tDeckInfo ?
-            tDeckInfo.length > 0 ?
-              tDeckInfo.map(tdeckInfo => {
-                return (
-                  <div key={tdeckInfo.id} style={{border: '1px solid black', backgroundColor:'beige'}}>
-                    <div>
-                      name: {tdeckInfo.name}
-                    </div>
-                    <div>
-                      totalWords: {tdeckInfo.totalWords}
-                    </div>
-                    <div>
-                      knownWords: {tdeckInfo.knownWords}
-                    </div>
-                    <div>
-                      <button onClick={() => {
-                        navigate(`/browse-deck/?deckId=${tdeckInfo.id}&pageIdx=0`)
-                      }}>view / edit deck</button>
-                    </div>
-                  </div>
-                )
-              })
-            :
-            <div>you have no target decks</div>
-          :
-            <div>fetching...</div>
-      }
-      </div>
+      <Container fluid className="border border-black" style={{backgroundColor: 'lightblue'}}>
+        <h1>DASHBOARD</h1>
+      </Container>
 
-      <h3>create deck</h3>
-      <Form
-        onSubmit={async (e) => {
-          e.preventDefault();
-          await createDeck(acct.username, acct.password, deckNameInp, [])
-          fetchAndSetDeckList()
-        }}
-      >
-        <Form.Label>deck name</Form.Label>
-        <Form.Control value={deckNameInp} onChange={(e) => setDeckNameInp(e.target.value)}/>
-        <button>submit</button>
-      </Form>
+      <Container className='pb-5'>
+        <Col className="text-center fs-1">
+            Welcome back, "{acct.username}" <br></br>
+            Your current daily streak is: 1
+        </Col>
+        <Col className="text-center fs-5 ">
+          your current learning progress (known words) / (total words) is:
+        </Col>
+        <Col className="text-center" style={{fontSize: '75px'}}>
+          50 %
+        </Col>
+        <Col className="text-center fs-5 mb-3">
+          you haven't completed your daily goal of 10 new words yet
+        </Col>
+        <Col className="text-center mb-1">
+          <Button variant="outline-primary" className="fs-4"
+            href="/new-words2?wordIdx=0"
+          >
+            learn new words
+          </Button>
+        </Col>
+        <Col className="text-center mb-5">
+          <Button variant="outline-primary" className="fs-4"
+            href='/review-cards'
+          >
+            review due cards
+          </Button>
+        </Col>
+        <h2>target word decks</h2>
+        <Card>
+          <Card.Body>
+            {
+              tDeckInfo ?
+                tDeckInfo.length > 0 ?
+                  tDeckInfo.map(tdeckInfo => {
+                    return (
+                      <Card key={tdeckInfo.id} className='mb-3'>
+                        <Card.Header>
+                          <Row>
+                            <Col xs='auto'>
+                              <Card.Text className="h3">
+                                {tdeckInfo.name}
+                              </Card.Text>
+                              <Card.Text>
+                                known words: {tdeckInfo.knownWords} <br></br>
+                                total words: {tdeckInfo.totalWords}
+                              </Card.Text>
+                            </Col>
+                            <Col xs></Col>
+                            <Col xs='auto'>
+                              <Button href={`/browse-deck/?deckId=${tdeckInfo.id}&pageIdx=0`}> browse / edit </Button>
+                            </Col>
+                          </Row>
+                        </Card.Header>
+                        <Card.Body>
+                          <div className='mb-2'>progress:</div>
+                          <ProgressBar now={tdeckInfo.totalWords == 0 ? 0 : (tdeckInfo.knownWords / tdeckInfo.totalWords) * 100} label={
+                            String(tdeckInfo.totalWords == 0 ? 0 : (tdeckInfo.knownWords / tdeckInfo.totalWords) * 100) + '%'
+                          }/>
+                        </Card.Body>
+                      </Card>
+                    )
+                  })
+                :
+                <div>you have no target decks</div>
+              :
+            <div>fetching...</div>
+          }
+          </Card.Body>
+        </Card>
+
+        
+        <h3>create new deck</h3>
+        <Card>
+          <Card.Body>
+            <Form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                await createDeck(acct.username, acct.password, deckNameInp, [])
+                fetchAndSetDeckList()
+              }}
+            >
+              <Form.Label className='fw-bold'>deck name</Form.Label>
+              <Form.Control value={deckNameInp} onChange={(e) => setDeckNameInp(e.target.value)} className='mb-3'/>
+              <Button type='submit'>
+                submit
+              </Button>
+
+            </Form>
+          </Card.Body>
+        </Card>
+
+      </Container>
+
+      
+
+     
 
      
     </>

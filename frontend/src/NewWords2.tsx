@@ -2,10 +2,10 @@ import React, { createContext, ReactElement, useContext, useEffect, useState } f
 import { AuthContext } from "./context/AuthContextProvider";
 import { changeWordKnownLevel, getNewWordsList, getTDeckListForUser, getWordsInDeck, searchDictionary, updateNewWordsList } from "./service/requestHelper";
 import { TimeContext } from "./context/TimeContextProvider";
-import { SearchResult, TDeckInfo, Word } from "../../global";
+import { knownLevelToColorDescription, SearchResult, TDeckInfo, Word } from "../../global";
 import { Navigate, Route, Routes, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { WordView } from "./WordDetails";
-import { Form, Modal } from "react-bootstrap";
+import { Button, Card, Col, Container, Form, Modal, Row, Stack } from "react-bootstrap";
 import { DeckInfoAndPageChange } from "./BrowseDeck";
 import { SearchBar, WordListItem } from "./Search";
 
@@ -45,15 +45,18 @@ function SpecificDeck({deckInfo, words, setWords} : {deckInfo : TDeckInfo, words
                 word={w}
                 extraButtons={
                   [
+                    <div>{inWords(w) ? '📝' : ''}</div>,
                     <button 
                       style={{
-                        backgroundColor: inWords(w) ? 'pink' : 'lightblue'
+                        backgroundColor: inWords(w) ? 'pink' : 'lightblue',
+                        marginLeft: '1em'
                       }} 
                       onClick={() => {
                         inWords(w) ? setWords(words.filter(word => word.id != w.id)) : setWords(words.concat(w))
                       }}>
-                    {inWords(w) ? 'remove from list' : 'add to list'}
-                    </button>
+                    {inWords(w) ? 'remove' : 'add'}
+                    </button>,
+                    
                   ]
                 }
             />
@@ -167,14 +170,16 @@ function AddFromDictionary({words, setWords} : {words: Word[], setWords: (v:Word
               word={wi.word} 
               extraButtons={
                 [
+                  <div>{inWords(wi.word) ? '📝' : ''}</div>,
                   <button 
                     style={{
-                      backgroundColor: inWords(wi.word) ? 'pink' : 'lightblue'
+                      backgroundColor: inWords(wi.word) ? 'pink' : 'lightblue',
+                      marginLeft: '1em'
                     }} 
                     onClick={() => {
                       inWords(wi.word) ? setWords(words.filter(word => word.id != wi.word.id)) : setWords(words.concat(wi.word))
                     }}>
-                  {inWords(wi.word) ? 'remove from list' : 'add to list'}
+                  {inWords(wi.word) ? 'remove' : 'add'}
                   </button>
                 ]
               }
@@ -355,92 +360,123 @@ function NewWords2() {
       } 
       />
     </Routes>
-    <h1>learn new words</h1>
-    <div>this list refreshes every day. Click on edit button on the left to edit this list</div>
-    <div style={{border: '1px solid red', minHeight: '30vh', padding:'1em', display: 'flex'}}>
-      {/* left bar */}
-      <div style={{border: '1px solid black', padding: '0.5em', minWidth: '10em', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between'}}>
-        <div style={{width: '100%'}}>
-          <div style={{border: '1px solid black', textWrap: 'nowrap', marginBottom: '1em', padding: '0.5em'}}>
-            <b>word markings: </b>
-            <div>✔: known word</div>
-            <div>🎯: daily word</div>
-          </div>
-          {
-            words ?
-              words.length > 0 ?
-                words.map((word, i) => {
-                  return (
-                    <div 
-                      key={word.id} 
-                      style={
-                        {
-                          border: '1px solid black', 
-                          width: '100%', 
-                          backgroundColor: wordIdx === i ? 'limegreen' : 'whitesmoke', 
-                          fontSize: '25px'
-                        }
-                      }
-                      onClick={() => setWordIdx(i)}
-                    >
-                    <span style={{fontSize: '20px'}}>{i + 1}.</span> {word.kanji}
+    <Container fluid className="border border-black mb-5" style={{backgroundColor: 'lightblue'}}>
+      <h1>LEARN NEW WORDS</h1>
+    </Container>
+    
+    
+    <Container className='pb-5'>
+      <Card>
+        <Card.Header>
+          <h2>new words list</h2>
+          <div>this list refreshes every day. Click on edit button on the left to edit this list</div>
+        </Card.Header>
+
+        <Card.Body>
+          <Row>
+            <Col xs='auto'>
+              <Card>
+                <Card.Header>
+                  <div className="fw-bold">word markings:</div>
+                  <div>✔: known word</div>
+                  <div>🎯: daily word</div>
+
+                </Card.Header>
+                <Card.Body style={{minHeight: '50vh', maxHeight: '80vh', overflow: 'scroll', overflowX: 'hidden'}}>
+                  <Stack gap={1}>
                     {
-                      word.knownLevel != null ? '✔' : ''
+                      words ?
+                        words.length > 0 ?
+                          words.map((word, i) => {
+                            return (
+                              <Card 
+                                key={word.id} 
+                                style={
+                                  {
+                                    width: '100%', 
+                                    backgroundColor: wordIdx === i ? 'limegreen' : 'whitesmoke', 
+                                  }
+                                }
+                                onClick={() => setWordIdx(i)}
+                              >
+                                <Card.Header>
+                                <Stack direction="horizontal" gap={2}>
+                                  <Card className='ps-1 pe-1 fs-5' style={{color: 'white', backgroundColor: knownLevelToColorDescription(word.knownLevel).kanjiColor}}>
+                                    {i + 1}
+                                  </Card>
+                                  <Card className='fs-4'>
+                                    {word.kanji}
+                                    {
+                                      word.knownLevel != undefined ? '✔' : ''
+                                    } 
+                                  </Card>
+                                </Stack>
+                                </Card.Header>
+                              </Card>
+                            )
+
+                          })
+                        :
+                        <div>this list is empty</div>
+                      :
+                        <div>fetching...</div>
                     }
-                    </div>
-                  )
+                  </Stack>
+                </Card.Body>
+                <Card.Footer>
+                  <Button 
+                    className='w-100'
+                    onClick={() => {
+                      navigate('edit/from-deck')
+                    }}
+                  >edit list ✎
+                  </Button>
+                </Card.Footer>
+              </Card>
+            </Col>
 
-                })
-              :
-              <div>this list is empty</div>
-            :
-              <div>fetching...</div>
-          }
-        </div>
-        
-        <div style={{width: '100%'}}>
-          <button 
-            style={{width: '100%'}}
-            onClick={() => {
-              navigate('edit/from-deck')
-            }}
-          >edit list ✎</button>
-        </div>
-        
-      </div>
+            <Col xs className="">
+              <Card style={{minHeight: '70vh'}}>
+                <Card.Body>
+                  {
+                    displayedWord ?
+                    <WordView 
+                      key={displayedWord.id} 
+                      word={displayedWord}
+                      otherButtons={[
+                      <button 
+                        style={{backgroundColor: 'lightblue'}} 
+                        onClick={async (e) => {
+                          window.open(`/cards-for-word/?wordId=${displayedWord.id}&autoCreate=true`)
+                          if (displayedWord.knownLevel== undefined) {
+                            // update known level of word, if it is not already known
+                            await changeWordKnownLevel(acct.username, acct.password, displayedWord.id, 0)
+                            const newWord = structuredClone(displayedWord);
+                            newWord.knownLevel = 0
+                            setWords(words!.slice(0, wordIdx).concat([newWord]).concat(words!.slice(wordIdx + 1)));
+                          }
+                        }}
+                      >
+                        mark as learnt and create card
+                      </button>,
+                      <button style={{backgroundColor: 'lightblue'}}>add word to deck</button>
+                      ]}
+                    />
+                    :
+                    <div>select a word to display it</div>
+                  }
+                </Card.Body>
+                
+              </Card>
+            </Col>
+          </Row>
+        </Card.Body>
+      </Card>
+    </Container>
 
-      {/* right page */}
-      <div style={{border: '1px solid black', width: '100%'}}>
-        {
-          displayedWord ?
-          <WordView 
-            key={displayedWord.id} 
-            word={displayedWord}
-            otherButtons={[
-            <button 
-              style={{backgroundColor: 'lightblue'}} 
-              onClick={async (e) => {
-                window.open(`/cards-for-word/?wordId=${displayedWord.id}&autoCreate=true`)
-                if (!displayedWord.knownLevel) {
-                  // update known level of word, if it is not already known
-                  await changeWordKnownLevel(acct.username, acct.password, displayedWord.id, '0')
-                  const newWord = structuredClone(displayedWord);
-                  newWord.knownLevel = 0
-                  setWords(words!.slice(0, wordIdx).concat([newWord]).concat(words!.slice(wordIdx + 1)));
+    
+    
 
-                }
-              }}
-            >
-              mark as learnt and create card
-            </button>,
-            <button style={{backgroundColor: 'lightblue'}}>add word to deck</button>
-            ]}
-          />
-          :
-          <div>select a word to display it</div>
-        }
-      </div>
-    </div>
     </>
   )
 }

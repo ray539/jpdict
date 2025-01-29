@@ -6,7 +6,6 @@ import { Account, Card, TDeckInfo, Word } from '../../global';
 import { getTDeckListForUser_service, register_service } from './service/service';
 import { getCardsForWord, getExampleSentencesForWord } from './service/requestHelper';
 import { A } from './A';
-import { NewWords, NewWords_ } from './NewWords';
 import { ReviewCards, ReviewCards_ } from './ReviewCards';
 import TimeContextProvider, { TimeContext } from './context/TimeContextProvider';
 import { Dashboard_ } from './DashBoard';
@@ -16,6 +15,7 @@ import { WordDetails_ } from './WordDetails';
 import { CardsForWord_ } from './CardsForWord';
 import { NewWords2_ } from './NewWords2';
 import { AddsWordsToDeck_ } from './AddWordsToDeck';
+import { Button, Col, Container, Nav, Navbar, NavDropdown, Row, Stack } from 'react-bootstrap';
 // DEBUG
 // import { increment_days, increment_hours, now_ } from './stubDate';
 
@@ -24,56 +24,99 @@ function Links() {
   const timeContext = useContext(TimeContext)
 
   const navigate = useNavigate();
-  const loggedIn_page =     
+  // const loggedIn_page =     
+  // <>
+  //   <button onClick={e => {
+  //     authContext.logout()
+  //     navigate("/")
+  //   }}>
+  //     logout
+  //   </button>
+  //   <Link to="/dashboard">
+  //     <button>dashboard</button>
+  //   </Link>
+  //   <Link to="/search">
+  //     <button>search dictionary</button>
+  //   </Link>
+  //   <Link to="/">
+  //     <button>logo</button>
+  //   </Link>
+  // </>
+  // const loggedIn =
+
+
+  const loggedOut =
   <>
-    <button onClick={e => {
-      authContext.logout()
-      navigate("/")
-    }}>
-      logout
-    </button>
-    <Link to="/dashboard">
-      <button>dashboard</button>
-    </Link>
-    <Link to="/search">
-      <button>search dictionary</button>
-    </Link>
-    <Link to="/">
-      <button>logo</button>
-    </Link>
   </>
 
-  const notloggedIn_page =
-  <>
-    <Link to="/login">
-      <button>login</button>
-    </Link>
-    <Link to="/register">
-      <button>register</button>
-    </Link>
-    <Link to="/dashboard">
-      <button disabled>login to view dashboard</button>
-    </Link>
-    <Link to="/">
-      <button>logo</button>
-    </Link>
-  </>
+  // const notloggedIn_page =
+  // <>
+  //   <Link to="/login">
+  //     <button>login</button>
+  //   </Link>
+  //   <Link to="/register">
+  //     <button>register</button>
+  //   </Link>
+  //   <Link to="/dashboard">
+  //     <button disabled>login to view dashboard</button>
+  //   </Link>
+  //   <Link to="/">
+  //     <button>logo</button>
+  //   </Link>
+  // </>
 
   return (
     <>
-      
-      <div style={{border: '1px solid blue', padding: '0.5em', marginBottom: '1em'}}>
+      {/* <div style={{border: '1px solid blue', padding: '0.5em', marginBottom: '1em'}}>
         DEBUG
         <div>curr time: {new Date(timeContext.getCurrentTimestamp()).toLocaleString()}</div>
         <div>timestamp: {timeContext.getCurrentTimestamp()}</div>
         <button onClick={() => {timeContext.setTimeStamp(timeContext.getCurrentTimestamp() + 3600 * 1000)}}>inc hour</button>
         <button onClick={() => {timeContext.setTimeStamp(timeContext.getCurrentTimestamp() + 24 * 3600 * 1000)}}>inc day</button>
         <button onClick={() => {timeContext.setTimeStamp(timeContext.getCurrentTimestamp() + 60 * 1000)}}>inc minute</button>
-      </div>
-      {authContext.account ? loggedIn_page : notloggedIn_page}
-    </>
+      </div> */}
+      {authContext.account ? 
+        <Navbar bg="light" className="shadow">
+          <Container>
+            <Navbar.Brand href="/" className='fs-3'>
+              Renshuu
+            </Navbar.Brand>
 
-    
+            <Nav className="me-auto">
+              <Nav.Link href="/dashboard">dashboard</Nav.Link>
+              <Nav.Link href="/search">search dictionary</Nav.Link>
+            </Nav>
+
+            <Navbar.Text className="me-2">
+                 signed in as:
+            </Navbar.Text>
+
+            <NavDropdown className="me-2" style={{ color: 'blue' }} title={authContext.account.username}>
+              <NavDropdown.Item>settings</NavDropdown.Item>
+            </NavDropdown>
+
+            <Button variant="danger" onClick={(e) => {
+              authContext.logout();
+              navigate('/')
+            }}>logout</Button>
+          </Container>
+        </Navbar>
+      : 
+        <Navbar bg="light" className="shadow">
+          <Container>
+            <Navbar.Brand href="/">
+              Renshuu
+            </Navbar.Brand>
+
+            <Nav className="me-auto">
+              <Nav.Link href="/register">register</Nav.Link>
+            </Nav>
+
+            <Button variant='primary' href="/login">login</Button>
+          </Container>
+        </Navbar>
+        }
+    </>
   )
 }
 
@@ -176,7 +219,6 @@ function App() {
               <Route path="/register" element={<Reigster />} />
               <Route path="/dashboard" element={<Dashboard_/>} />
               <Route path="/search" element={<Search_ />} />
-              <Route path="/new-words/*" element={<NewWords_/>} />
               <Route path="/new-words2/*" element={<NewWords2_ />} />
               <Route path="/review-cards/*" element={<ReviewCards_ />} />
               <Route path="/browse-deck/*" element={<BrowseDeck_ />} />

@@ -100,6 +100,7 @@ model NewWordList {
   wordList Json // contains ids of the new words of the day. (word info can change throughout the day)
 }
 
+
 model BelongsToWordDeck {
   word Word @relation(fields: [wordId], references: [id])
   wordId String
@@ -119,7 +120,7 @@ model WordKnownLevel {
   word Word @relation(fields: [wordId], references: [id])
   wordId String
 
-  knownLevel String // 0, 1, 2, 3, 4, 5
+  knownLevel Int // 0, 1, 2, 3, 4, 5 or 'undefined' if unknown
   @@id([accountId, wordId])
 }
 
@@ -155,8 +156,10 @@ model Card {
   // includes the cards example sentences and all that stuff
   // can be different from that in the original word, because user may edit the card
   cardData Json
-  knownLevel Int
+  knownLevel Int // always at least zero. 0, 1, 2, 3, ... 7
+  easeFactor Float
   cardType CardType
+  name String @unique // unique name for each card, auto generated
 
   lastReviewed DateTime?
   timeDue DateTime

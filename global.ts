@@ -47,7 +47,7 @@ export interface Word {
   reading: string
   readingOther: [string]
   definitions: [Definition]
-  knownLevel: number
+  knownLevel?: number // undefined - word not seen before
 }
 
 
@@ -75,8 +75,10 @@ export interface Card {
   accountId: string;
   wordId: string;
   cardData: CardData;
-  knownLevel: number;
+  easeFactor: number,
+  knownLevel: number; // has to be defined
   cardType: CardType;
+  name: string,
   lastReviewed: Date | null;
   timeDue: Date
   dateAdded: Date;
@@ -87,16 +89,16 @@ export interface SearchResult {
   matchLvl: number
 }
 
-export function knownLevelToColorDescription(knownLevel: number | null) {
+export function knownLevelToColorDescription(knownLevel: number | undefined) {
   let kanjiColor = 'black';
   let def = '';
-  if (knownLevel != null) {
+  if (knownLevel != undefined) {
     if (knownLevel == 0) {
       kanjiColor = 'blue'
-      def = '(known level 0, new)'
+      def = '(known level 0, seen)'
     } else {
       kanjiColor = 'forestgreen'
-      def = `(known level ${knownLevel}})`
+      def = `(known level ${knownLevel})`
     }
   }
   return {kanjiColor: kanjiColor, def: def}
@@ -114,4 +116,10 @@ export function checkSentenceInput(jpn_input: string, word: Word) {
     return  {error: `word "${wordsToMatch}" not in sentence`}
   }
   return {foundWordForm: foundWordForm}
+}
+
+export function getRandomIntInclusive(min: number, max: number) {
+  const minCeiled = Math.ceil(min);
+  const maxFloored = Math.floor(max);
+  return Math.floor(Math.random() * (maxFloored - minCeiled + 1) + minCeiled); // The maximum is inclusive and the minimum is inclusive
 }

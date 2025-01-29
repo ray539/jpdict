@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import fs from 'fs'
-import { Word } from "../global";
+import { Account, Word } from "../global";
 const prisma = new PrismaClient();
 
 const hirToKat = {
@@ -306,25 +306,25 @@ function getMatchlevel(terms: string[], word: Word) {
   // check if any terms is an exact match
   let res1 = terms
     .map(term => allKanji.find(kanji => term == kanji) != undefined)
-    .reduce((c, n) => c || n)
+    .reduce((c, n) => c || n, false)
   if (res1) return 1;
 
   // check if any kata(any term) is an exact match
   let res2 = kataTerms
     .map(term => kataReadings.find(kataReading => term == kataReading) != undefined)
-    .reduce((c, n) => c || n)
+    .reduce((c, n) => c || n, false)
   if (res2) return 2;
   
   // check if any term is the prefix of the word
   let res3 = terms
-    .map(term => allKanji.find(kanji => beginsWith(kanji, term)))
-    .reduce((c, n) => c || n)
+    .map(term => allKanji.find(kanji => beginsWith(kanji, term)) != undefined)
+    .reduce((c, n) => c || n, false)
   if (res3) return 3;
 
   // check if any kata(term) is a prefix of kata(reading)
   let res4 = kataTerms
-    .map(term => kataReadings.find(kr => beginsWith(kr, term)))
-    .reduce((c, n) => c || n)
+    .map(term => kataReadings.find(kr => beginsWith(kr, term)) != undefined)
+    .reduce((c, n) => c || n, false)
   if (res4) return 4;
 
   // check if term appears as an english word
@@ -340,31 +340,56 @@ function getMatchlevel(terms: string[], word: Word) {
   
   let res5 = terms
     .map(term => english.find(word => word == term) != undefined)
-    .reduce((c, n) => c || n)
+    .reduce((c, n) => c || n, false)
   if (res5) return 5;
 
   return null
 }
 
-export async function searchDictionary(queryStr: string, skip: number, take: number) {
+export async function getWordKnownLevel(acctId: string, wordId: string) {
+  const knownLevel_ = await prisma.wordKnownLevel.findUnique({
+    where: {
+      accountId_wordId: {
+        accountId: acctId,
+        wordId: wordId
+      }
+    },
+    select: {
+      knownLevel: true
+    }
+  })
+  if (knownLevel_) {
+    return knownLevel_.knownLevel
+  } else {
+    return null
+  }
+}
+
+export async function searchDictionary(queryStr: string, skip: number, take: number, acctId: string) {
   let terms = queryStr.split(/\s+/).map(t => t.toLowerCase())
-  let allWords = await prisma.word.findMany({});
+  let allWords = (await prisma.word.findMany({})) as any as Word[];
   // console.log(allWords.slice(0, 10));
-  
   let result = allWords.map(w => {
     return {
       word: w,
       matchLvl: getMatchlevel(terms, w as any)
     }
   });
-  
-  
+
   result = result.filter(obj => obj.matchLvl !== null)
   result = result.sort((obj1, obj2) => -(obj1.matchLvl! - obj2.matchLvl!))
-  
   // skip..skip + take
   result = result.slice(skip, skip + take)
-  return result;
+  // find known levels of all words in result
+  let promises = result.map(async (sr) => {
+    let kl = await getWordKnownLevel(acctId, sr.word.id);
+    if (kl != null) {
+      sr.word.knownLevel = kl;
+    }
+    return sr;
+  })
+  let finalRes = await Promise.all(promises)
+  return finalRes;
 }
 
 async function test() {

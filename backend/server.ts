@@ -3,7 +3,7 @@ import { Prisma, PrismaClient } from "@prisma/client";
 import 'express-async-errors'
 import morgan from 'morgan'
 import { objectEnumNames } from '@prisma/client/runtime/library';
-import { Account } from '../global';
+import { Account, Card } from '../global';
 import { log } from 'console';
 import { equal } from 'assert';
 import { searchDictionary } from './search';
@@ -148,7 +148,7 @@ app.get('/api/getDeckInfo', async(req, res) => {
                 knownByAccount: {
                   some: {
                     knownLevel: {
-                      notIn: ["0"]
+                      notIn: [0]
                     }
                   }
                 }
@@ -229,7 +229,7 @@ app.get('/api/getTDeckListForUser', async(req, res) => {
                 knownByAccount: {
                   some: {
                     knownLevel: {
-                      notIn: ["0"]
+                      notIn: [0]
                     }
                   }
                 }
@@ -420,23 +420,21 @@ app.put('/api/changeWordKnownLevel', async (req, res) => {
   }
 
   const wordId = req.body.wordId as string
-  const knownLevel = req.body.knownLevel as string
+  const knownLevel = req.body.knownLevel as number
   console.log(wordId);
   console.log(knownLevel);
   
   const found = await prisma.word.findFirst({where: {id: wordId}})
-  console.log(found);
   
   if (!found) {
     return res.status(403).json({error: 'wordId not found'})
   }
-  
 
-  if (!['null', '0', '1', '2', '3', '4', '5'].includes(knownLevel)) {
+  if (!(knownLevel == -1 || 0 <= knownLevel && knownLevel <= 8)) {
     return res.status(403).json({error: 'invalid known level'})
   }
 
-  if (knownLevel == 'null') {
+  if (knownLevel == -1) {
     console.log('here');
     const ret = await prisma.wordKnownLevel.deleteMany({
       where: {
@@ -447,6 +445,7 @@ app.put('/api/changeWordKnownLevel', async (req, res) => {
     return res.json(ret)
   }
 
+  const kl = Number(knownLevel)
   const ret = await prisma.wordKnownLevel.upsert({
     where: {
       accountId_wordId: {
@@ -455,12 +454,12 @@ app.put('/api/changeWordKnownLevel', async (req, res) => {
       }
     },
     update: {
-      knownLevel: knownLevel
+      knownLevel: kl
     },
     create: {
       accountId: foundAccnt.id,
       wordId: wordId,
-      knownLevel: knownLevel,
+      knownLevel: kl,
     }
   })
   res.json(ret)
@@ -573,6 +572,7 @@ app.get('/api/wordIdsToWords', async (req, res) => {
   res.json(words)
 })
 
+
 /**
  * body: {
  *  strategy: string
@@ -580,13 +580,24 @@ app.get('/api/wordIdsToWords', async (req, res) => {
  * }
  * should be in body, since headers only accepts string type
  */
+
+// let lock : {[key: string] : boolean} = {}
+// assume username is unique (TODO: enforce in the schema)
+
 app.get('/api/getNewWordsList', async (req, res) => {
   const username = req.headers.username as string
   const password = req.headers.password as string;
+  // if (lock[username]) {
+  //   return;
+  // }
+  // // lock the function for the current acct
+  // lock[username] = true;
+
   const foundAccnt = await loginAccount(username, password)
   if (!foundAccnt) {
     return res.status(403).json({error: 'invalid credentials'})
   }
+
 
   const strategy = req.query.strategy as string
   const timestamp_ = req.query.timestamp as string
@@ -646,14 +657,16 @@ app.get('/api/getNewWordsList', async (req, res) => {
       take: NUM_NEW_WORDS
     })
     const wordIds = words_.map(obj => obj.wordId);
-    // TODO:
-    // change creation of newWordList to updating
-    prisma.newWordList.upsert({
+
+    console.log('here');
+    
+    
+    const ret = await prisma.newWordList.upsert({
       where: {
         accountId: foundAccnt.id
       },
       update: {
-        // accountId: foundAccnt.id,        
+        accountId: foundAccnt.id,       
         date: now,
         wordList: wordIds
       },
@@ -664,16 +677,6 @@ app.get('/api/getNewWordsList', async (req, res) => {
       }
     })
 
-    // await prisma.newWordList.upsert({
-    //   where: {
-    //     accountId: foundAccnt.id
-    //   }
-    //   update: {
-    //     accountId: foundAccnt.id,        
-    //     date: now,
-    //     wordList: wordIds
-    //   }
-    // })
     const words = await wordIdsToWords(wordIds, foundAccnt);
     res.json(words)
   } else if (strategy == 'RANDOM') {
@@ -874,12 +877,25 @@ app.get('/api/getCardsForWord', async(req, res) => {
       wordId: wordId,
     },
     orderBy: {
-      dateAdded: 'asc'
+      dateAdded: 'asc',
     }
   })
 
   res.json(cards)
 })
+
+function getNumAtEnd(s: string) {
+  let N = s.length;
+  let a = ''
+  for (let i = N - 1; i >= 0 && s[i] >= '0' && s[i] <= '9'; i--) {
+    a += s[i];
+  }
+  let b = a.split('').reverse().join('')
+  if (b.length > 0) {
+    return Number(b);
+  }
+  return 0;
+}
 
 app.post('/api/createCard', async(req, res) => {
   const username = req.headers.username as string
@@ -888,17 +904,44 @@ app.post('/api/createCard', async(req, res) => {
   if (!foundAccnt) {
     return res.status(403).json({error: 'invalid credentials'})
   }
-  const card = req.body.card;
-  const cardType = req.body.cardType 
+  const card = req.body.card as Card;
+  const cardType = req.body.cardType;
+
+  let name = '';
+  if (cardType == 'VOCAB') {
+    name = `${card.cardData.kanji} (vocab card)`;
+  } else {
+  // add name
+    const sentenceJpn = card.cardData.exampleSentences.length > 0 ? card.cardData.exampleSentences[0].jpn : 'err';
+    name = `${card.cardData.kanji} 「${sentenceJpn.slice(0, 3)}…」(sentence card)`
+    const existingNames = (await prisma.card.findMany({
+      where: {
+        accountId: foundAccnt.id,
+        wordId: card.wordId
+      }
+    })).map(c => c.name);
+    if (existingNames.includes(name)) {
+      // extract last number from name (if any)
+      // name must end with a number
+      const num = existingNames
+        .map(name => getNumAtEnd(name))
+        .reduce((c, n) => Math.max(c, n));
+      name += ` ${num + 1}`
+    }
+  }
+
+  // get all cards for the word
 
   // we have to link it to the account and the word the card is for
   // therefore, we use the 'connect' option
   const createdCard = await prisma.card.create({
     data: {
-      cardData: card.cardData,
+      cardData: card.cardData as any,
       dateAdded: card.dateAdded,
       knownLevel: card.knownLevel,
+      easeFactor: card.easeFactor,
       cardType: cardType,
+      name: name,
       lastReviewed: card.lastReviewed,
       timeDue: card.timeDue,
       account: {
@@ -927,6 +970,8 @@ app.put('/api/updateCard', async(req, res) => {
   const cardId = req.body.data.cardId;
   const newCard = req.body.data.newCard;
 
+  
+
   // we have to link it to the account and the word the card is for
   // therefore, we use the 'connect' option
   const createdCard = await prisma.card.update({
@@ -937,6 +982,7 @@ app.put('/api/updateCard', async(req, res) => {
       cardData: newCard.cardData,
       dateAdded: newCard.dateAdded,
       knownLevel: newCard.knownLevel,
+      easeFactor: newCard.easeFactor,
       lastReviewed: newCard.lastReviewed,
       timeDue: newCard.timeDue,
       account: {
@@ -993,6 +1039,11 @@ app.get('/api/getDueCards', async(req, res) => {
   res.json(dueCards)
 })
 
+
+
+// 
+
+
 app.get('/api/searchDictionary', async(req, res) => {
   const username = req.headers.username as string;
   const password = req.headers.password as string;
@@ -1008,7 +1059,7 @@ app.get('/api/searchDictionary', async(req, res) => {
   const skip = Number(req.query.skip);
   const take = Number(req.query.take);
 
-  const searchRes = await searchDictionary(queryStr, skip, take);
+  const searchRes = await searchDictionary(queryStr, skip, take, foundAccnt.id);
   // console.log(searchRes);
   
   res.json(searchRes)

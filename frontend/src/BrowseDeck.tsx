@@ -4,6 +4,7 @@ import { Route, Routes, useParams, useSearchParams } from "react-router-dom";
 import { TDeckInfo, Word } from "../../global";
 import { deleteWordFromDeck, getDeckInfo, getWordsInDeck } from "./service/requestHelper";
 import { WordListItem } from "./Search";
+import { Card, Col, Container, Pagination, Row, Form, Badge, Button } from "react-bootstrap";
 
 // OLD WORDS DESIGN
 // let kanjiColor = 'black';
@@ -50,27 +51,99 @@ const WORDS_PER_PAGE = 10
 
 export function DeckInfoAndPageChange({deckInfo, pageIdx, setPageIdx} : {deckInfo: TDeckInfo, pageIdx: number, setPageIdx: (v: number) => void}) {
   const NUMPAGES = Math.floor(deckInfo.totalWords / WORDS_PER_PAGE)
+  const N = 5;
+  // total pages:
+  // 1 2 3 ... NUMPAGES
+  // 1 2 3 4 N
+  // initially,
+  // base = 1
+  // window: [base..base + N - 1]
+
+  // when click '>', if (base + N <= NUMPAGES), then base++
+  // when click '<', if (base - N >= 1), then base--
+  // when click '>>', base = max(NUMPAGES - N + 1, 1)
+  // when click '<<', base = 1
+
+  // base + N
+  // given a page idx
+  // 1 2 3 4 5 6
+
+  // 
+
+  const [base, setBase] = useState(Math.floor((pageIdx + 1) / N) * N + 1);
+  const onClickR = () => {
+    if (base + 2 * N - 1 <= NUMPAGES) {
+      setBase(base + N);
+    }
+  }
+  const onClickRR = () => {
+    setBase(Math.max(NUMPAGES - N + 1, 1));
+  }
+  const onClickL = () => {
+    if (base - N >= 1) {
+      setBase(base - N);
+    }
+  }
+  const onClickLL = () => {
+    setBase(1);
+  }
+
+  function arrMinMax(min: number, max: number) {
+    const array = [];
+    for (let i = min; i <= max; i++) {
+      array.push(i);
+    }
+    return array;
+  }
+
+
   return (
     <>
-      <div>total words: {deckInfo ? deckInfo.totalWords : 'NA'}</div>
-      <div>known words: {deckInfo ? deckInfo.knownWords : 'NA'}</div>
-      <div style={{display: 'flex', justifyContent: 'space-between', border: '1px solid black', padding: '0.5em', marginBottom: '0.5em'}}>
-        <div style={{display: 'flex', alignItems: 'center'}}>
-        
-          <div>page: {pageIdx} / {NUMPAGES ? NUMPAGES : 'NA'}</div>
-          <button disabled={pageIdx == 0} onClick={() => {setPageIdx(Math.max(0, pageIdx - 1))}}>
-            ←
-          </button>
-          <button disabled={NUMPAGES != null && Number(pageIdx) == NUMPAGES} onClick={() => setPageIdx(Math.min(NUMPAGES, pageIdx + 1))}>
-            →
-          </button>
-          
-        </div>
-        <div>
-          filter:
-          <input type='text'></input>
-        </div>
-      </div>
+      <Card className='mb-3'>
+        <Card.Header>
+          <div className='h4'>Deck info</div>
+          <div>total words: {deckInfo ? deckInfo.totalWords : 'NA'}</div>
+          <div>known words: {deckInfo ? deckInfo.knownWords : 'NA'}</div>
+        </Card.Header>
+
+        <Card.Body>
+          <Row>
+            <Col xs='auto'>
+            <Pagination>
+              <Pagination.First onClick={() => onClickLL()}></Pagination.First>
+              <Pagination.Prev onClick={() => onClickL()}></Pagination.Prev>
+              {
+                (arrMinMax(base, base + N - 1)).map(pageNum => {
+                  return (
+                    <Pagination.Item active={pageNum == pageIdx + 1} onClick={(e) => {
+                      setPageIdx(pageNum - 1)
+                    }}>
+                      {pageNum}
+                    </Pagination.Item>
+                  )
+                })
+              }
+              <Pagination.Next onClick={() => onClickR()}></Pagination.Next>
+              <Pagination.Last onClick={() => onClickRR()}></Pagination.Last>
+            </Pagination>
+            </Col>
+            <Col xs>
+            </Col>
+            <Col xs='auto'>
+              <Form.Group as={Row}>
+                <Form.Label column xs="auto">
+                  <Badge bg='secondary' className='fs-6'>
+                  filter:
+                  </Badge>
+                </Form.Label>
+                <Col xs='auto'>
+                  <Form.Control/>
+                </Col>
+              </Form.Group>
+            </Col>
+          </Row>
+        </Card.Body>
+      </Card>
     </>
   )
 }
@@ -111,28 +184,33 @@ function DeckView({deckInfo, pageIdx, setPageIdx} : {deckInfo :  TDeckInfo, page
   return (
     <>
       <DeckInfoAndPageChange deckInfo={deckInfo} pageIdx={pageIdx} setPageIdx={setPageIdx}/>
-      {
-        words ?
-          words.length > 0 ?
-            words.map(w => {
-              return (
-                <WordListItem 
-                  word={w}
-                  extraButtons={
-                    [
-                      <button onClick={() => onDeleteWord(w)} style={{backgroundColor: 'pink'}}>
-                        delete {/*TODO: also update deck info*/}
-                      </button>
-                    ]
-                  }
-              />
-              )
-            })
-          :
-          <div>there are currently no words in this deck. Why not add some?</div>
-        :
-          <div>fetching...</div>
-      }
+      <Card>
+        <Card.Body>
+          {
+          words ?
+            words.length > 0 ?
+              words.map(w => {
+                return (
+                  <WordListItem
+                    word={w}
+                    extraButtons={
+                      [
+                        <Button variant='danger' onClick={() => onDeleteWord(w)}>
+                          delete {/*TODO: also update deck info*/}
+                        </Button>
+                      ]
+                    }
+                />
+                )
+              })
+              :
+              <div>there are currently no words in this deck. Why not add some?</div>
+            :
+            <div>fetching...</div>
+          }
+        </Card.Body>
+      </Card>
+
     </>
   )
 }
@@ -174,10 +252,14 @@ function BrowseDeck() {
         deckId ?
           deckInfo ?
             pageIdx != null ?
-              <div style={{border: '1px solid red', minHeight: '30vh', padding:'1em'}}>
-                <h2>deckname: {deckInfo ? deckInfo.name : 'NA'}</h2>
+            <>
+              <Container fluid className="border border-black mb-5" style={{backgroundColor: 'lightblue'}}>
+                <h1>BROWSE DECK: {deckInfo.name}</h1>
+              </Container>
+              <Container className="pb-5">
                 <DeckView deckInfo={deckInfo} pageIdx={pageIdx} setPageIdx={setPageIdx}/>
-              </div>
+              </Container>
+            </>
             :
             <div>query parameter pageIdx missing</div>
           :

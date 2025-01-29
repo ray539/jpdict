@@ -161,7 +161,7 @@ export async function addWordsToDeck(username: string, password: string, deckId:
   }
 }
 
-export async function changeWordKnownLevel(username: string, password: string, wordId: string, knownLevel: string) {
+export async function changeWordKnownLevel(username: string, password: string, wordId: string, knownLevel: number) {
   try {
     const res = await axios.put(`${BASEURL}/api/changeWordKnownLevel`, 
       {

@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { AuthContext } from "./context/AuthContextProvider";
 import { Link, redirectDocument, Route, Routes, useParams, useSearchParams } from "react-router-dom";
-import { addCustomSentenceForWord, createCard, deleteCard, getCardsForWord, getCustomSentencesForWord, getExampleSentencesForWord, getWord, updateCard } from "./service/requestHelper";
+import { addCustomSentenceForWord, changeWordKnownLevel, createCard, deleteCard, getCardsForWord, getCustomSentencesForWord, getExampleSentencesForWord, getWord, updateCard } from "./service/requestHelper";
 import { Account, Card, CardData, CardType, checkSentenceInput, ExampleSentence, Word } from "../../global";
 import { TimeContext } from "./context/TimeContextProvider";
 import { EditText, EditTextarea } from "react-edit-text";
@@ -11,6 +11,7 @@ import { log } from "node:console";
 import { useImmer } from "use-immer";
 import { SentenceListItem } from "./WordDetails";
 import { A } from "./A";
+import { knownLevelDelayTime } from "./ReviewCards";
 
 async function fetchSentences(acct: Account, word: Word) {
   // get example sentence on card and add it if it exists
@@ -58,8 +59,10 @@ async function getVocabCard(word: Word, acct: Account, timestamp: number) {
     },
     cardType: 'VOCAB',
     knownLevel: 0,
+    easeFactor: 2.5,
+    name: 'new', // auto generated
     lastReviewed: null,
-    timeDue: new Date(currTimestamp + 1800 * 1000), // due half an hour from now
+    timeDue: new Date(currTimestamp + knownLevelDelayTime(0, 2.5)), // due half an hour from now
     dateAdded: new Date(currTimestamp)
   }
   return newCard
@@ -85,8 +88,10 @@ async function getSentenceCard(word: Word, sentence: ExampleSentence, acct: Acco
     },
     cardType: 'VOCAB',
     knownLevel: 0,
+    easeFactor: 2.5,
+    name: 'new', 
     lastReviewed: null,
-    timeDue: new Date(currTimestamp + 1800 * 1000), // due half an hour from now
+    timeDue: new Date(currTimestamp + knownLevelDelayTime(0, 2.5)), // due half an hour from now
     dateAdded: new Date(currTimestamp)
   }
   return newCard
@@ -432,9 +437,10 @@ function CardEditor({cardOnPageHasSentence, navToCardWithSentence, cardsOnPage, 
   return (
     <>
       <div style={{padding: '1em'}}>
-        <h1>card editor</h1>
+        <h1>Card Editor: {card.name}</h1>
         <div>date added: {card.dateAdded.toString()}</div>
         <div>last reviewed: {card.lastReviewed ? card.lastReviewed.toString() : 'never'} </div>
+        <div>time due: {card.timeDue.toString()}</div>
         <div>known level of card: {card.knownLevel}</div>
         <div>cardId: {card.id}</div>
         {
@@ -545,8 +551,19 @@ function CardsForWord() {
       window.alert('couldn\'t create card')
       return;
     }
+    await setWordSeen(wordS);
+
     setCards(cardsS.concat(createdCard));
     setCardIdx((cardsS.length))
+  }
+
+  async function setWordSeen(wordS: Word)  {
+    console.log(wordS);
+    console.log('here');
+    if (wordS.knownLevel == undefined) {
+      // update known level of word, if it is not already known
+      await changeWordKnownLevel(acct.username, acct.password, wordS.id, 0)
+    }
   }
 
   function checkCanCreateVocabCard(cardsS: Card[]) {
@@ -576,6 +593,7 @@ function CardsForWord() {
       window.alert('couldn\'t create card')
       return;
     }
+    await setWordSeen(word!);
     setCards(cards!.concat(createdCard));
     setCardIdx((cards!.length))
   }
@@ -615,7 +633,7 @@ function CardsForWord() {
           <h2>cards for word: {word.kanji}</h2>
           <div style={{border: '1px solid red', minHeight: '30vh', padding:'1em', display: 'flex'}}>
             
-            <div style={{border: '1px solid black', padding: '0.5em', minWidth: '15em', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between'}}>
+            <div style={{border: '1px solid black', padding: '0.5em', minWidth: '17em', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between'}}>
               {/* left bar */} 
               <div style={{width: '100%'}}>
                 {/* card list*/}
@@ -628,7 +646,7 @@ function CardsForWord() {
                             setCardIdx(i)
                           }}
                         >
-                        {card.cardData.kanji} {i + 1} ({card.cardType.toLowerCase()} card)
+                        {card.name}
                         </div>
                       )
                     })

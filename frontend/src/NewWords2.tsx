@@ -444,10 +444,11 @@ function NewWords2() {
                       key={displayedWord.id} 
                       word={displayedWord}
                       otherButtons={[
-                      <button 
-                        style={{backgroundColor: 'lightblue'}} 
+                      <Button
+                        variant='outline-primary'
+                        className='me-5'
+                        href={`/cards-for-word/?wordId=${displayedWord.id}&autoCreate=true`}
                         onClick={async (e) => {
-                          window.open(`/cards-for-word/?wordId=${displayedWord.id}&autoCreate=true`)
                           if (displayedWord.knownLevel== undefined) {
                             // update known level of word, if it is not already known
                             await changeWordKnownLevel(acct.username, acct.password, displayedWord.id, 0)
@@ -458,8 +459,12 @@ function NewWords2() {
                         }}
                       >
                         mark as learnt and create card
-                      </button>,
-                      <button style={{backgroundColor: 'lightblue'}}>add word to deck</button>
+                      </Button>,
+                      <Button
+                        variant='outline-primary'
+                      >
+                        add word to deck
+                      </Button>
                       ]}
                     />
                     :

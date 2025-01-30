@@ -876,9 +876,18 @@ app.get('/api/getCardsForWord', async(req, res) => {
       accountId: foundAccnt.id,
       wordId: wordId,
     },
-    orderBy: {
-      dateAdded: 'asc',
+  })
+
+  let tmp = {
+    'VOCAB': 0,
+    'SENTENCE': 1
+  }
+  cards.sort((c1, c2) => {
+    let d1 = tmp[c1.cardType] - tmp[c2.cardType]
+    if (d1 != 0) {
+      return d1;
     }
+    return c1.dateAdded.getTime() - c2.dateAdded.getTime();
   })
 
   res.json(cards)

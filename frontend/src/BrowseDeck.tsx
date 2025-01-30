@@ -4,7 +4,7 @@ import { Route, Routes, useParams, useSearchParams } from "react-router-dom";
 import { TDeckInfo, Word } from "../../global";
 import { deleteWordFromDeck, getDeckInfo, getWordsInDeck } from "./service/requestHelper";
 import { WordListItem } from "./Search";
-import { Card, Col, Container, Pagination, Row, Form, Badge, Button } from "react-bootstrap";
+import { Card, Col, Container, Pagination, Row, Form, Badge, Button, Stack } from "react-bootstrap";
 
 // OLD WORDS DESIGN
 // let kanjiColor = 'black';
@@ -108,38 +108,33 @@ export function DeckInfoAndPageChange({deckInfo, pageIdx, setPageIdx} : {deckInf
 
         <Card.Body>
           <Row>
-            <Col xs='auto'>
-            <Pagination>
-              <Pagination.First onClick={() => onClickLL()}></Pagination.First>
-              <Pagination.Prev onClick={() => onClickL()}></Pagination.Prev>
-              {
-                (arrMinMax(base, base + N - 1)).map(pageNum => {
-                  return (
-                    <Pagination.Item active={pageNum == pageIdx + 1} onClick={(e) => {
-                      setPageIdx(pageNum - 1)
-                    }}>
-                      {pageNum}
-                    </Pagination.Item>
-                  )
-                })
-              }
-              <Pagination.Next onClick={() => onClickR()}></Pagination.Next>
-              <Pagination.Last onClick={() => onClickRR()}></Pagination.Last>
-            </Pagination>
+            <Col xs='auto' className=''>
+              <Pagination>
+                <Pagination.First onClick={() => onClickLL()}></Pagination.First>
+                <Pagination.Prev onClick={() => onClickL()}></Pagination.Prev>
+                {
+                  (arrMinMax(base, base + N - 1)).map(pageNum => {
+                    return (
+                      <Pagination.Item active={pageNum == pageIdx + 1} onClick={(e) => {
+                        setPageIdx(pageNum - 1)
+                      }}>
+                        {pageNum}
+                      </Pagination.Item>
+                    )
+                  })
+                }
+                <Pagination.Next onClick={() => onClickR()}></Pagination.Next>
+                <Pagination.Last onClick={() => onClickRR()}></Pagination.Last>
+              </Pagination>
             </Col>
-            <Col xs>
-            </Col>
-            <Col xs='auto'>
-              <Form.Group as={Row}>
-                <Form.Label column xs="auto">
-                  <Badge bg='secondary' className='fs-6'>
-                  filter:
-                  </Badge>
-                </Form.Label>
-                <Col xs='auto'>
-                  <Form.Control/>
-                </Col>
-              </Form.Group>
+
+            <Col xs='auto' className='ms-auto'>
+              <Stack direction='horizontal' gap={2}>
+                <Card style={{backgroundColor: 'whitesmoke'}} className='p-1'>
+                    filter:
+                </Card>
+                <Form.Control style={{maxWidth: '10em'}}/>
+              </Stack>
             </Col>
           </Row>
         </Card.Body>

@@ -12,6 +12,7 @@ import { useImmer } from "use-immer";
 import { SentenceListItem } from "./WordDetails";
 import { A } from "./A";
 import { knownLevelDelayTime } from "./ReviewCards";
+import { Badge, Button, Card as Card_b, Col, Container, Row, Spinner, Stack } from "react-bootstrap";
 
 async function fetchSentences(acct: Account, word: Word) {
   // get example sentence on card and add it if it exists
@@ -135,24 +136,91 @@ function Fields({kanji_inp, setKanji_inp, reading_inp, setReading_inp, definitio
 
   return (
     <>
-      <h3>fields</h3>
-      <button>reset</button>
-      <div>
-        <label>kanji:</label>
-        <input type='text' value={kanji_inp} onChange={(e) => {setKanji_inp(e.target.value);}}></input>
-      </div>
-      <div>
-        <label>reading:</label>
-        <input type='text' value={reading_inp} onChange={(e) => {setReading_inp(e.target.value);}}></input>
-      </div>
-      <div>
-        <label>definition: </label>
-        <EditTextarea
-          style={{border: '1px solid black'}}
-          value={definitions_inp}
-          onChange={(e) => {setDefinitions_inp(e.target.value);}}
-        />
-      </div>
+      <Card_b className='mb-3'>
+        <Card_b.Header>
+          Edit word appearance and definition
+        </Card_b.Header>
+        <Card_b.Body>
+          <Form className=''>
+            <Row className='mb-2'>
+              <Col className=''>
+                <Stack direction='horizontal' className=''>
+                  <h4>field</h4>
+                  {/* <Card_b style={{backgroundColor: 'green', color: 'white'}} className='p-1'>
+                    field
+                  </Card_b> */}
+                </Stack>
+              </Col>
+              <Col>
+                <Stack direction='horizontal' className='justify-content-end' >
+                  <h4>appears in</h4>
+                  {/* <Card_b style={{backgroundColor: 'green', color: 'white'}} className='p-1'>
+                    appears in
+                  </Card_b> */}
+                </Stack>
+              </Col>
+            </Row>
+            <Row className=''>
+              <Col className=''>
+                <Stack direction='horizontal' className='justify-content-between' gap={1}>
+                  <b>kanji: </b>
+                  <Form.Control 
+                    style={{maxWidth: '15em'}}
+                    value={kanji_inp} 
+                    onChange={(e) => {setKanji_inp(e.target.value);}}
+                  ></Form.Control>
+                </Stack>
+              </Col>
+              <Col>
+                <Stack direction='horizontal' className='justify-content-end'>
+                  <Badge bg='primary'>front</Badge>
+                </Stack>
+              </Col>
+            </Row>
+            <Row className=''>
+              <Col className=''>
+                <Stack direction='horizontal' className='justify-content-between' gap={1}>
+                  <b>reading: </b>
+                  <Form.Control 
+                    style={{maxWidth: '15em'}}
+                    value={reading_inp} 
+                    onChange={(e) => {setReading_inp(e.target.value);}}
+                  ></Form.Control>
+                </Stack>
+              </Col>
+              <Col>
+                <Stack direction='horizontal' className='justify-content-end'>
+                  <Badge bg='secondary'>back</Badge>
+                </Stack>
+              </Col>
+            </Row>
+            <Row className='mb-2'>
+              <Col className=''>
+                <Stack direction='vertical' gap={1}>
+                  <b>definition: </b>
+                </Stack>
+              </Col>
+              <Col>
+                <Stack direction='horizontal' className='justify-content-end'>
+                  <Badge bg='secondary'>back</Badge>
+                </Stack>
+              </Col>
+            </Row>
+            <Form.Control 
+              as='textarea' 
+              value={definitions_inp}
+              onChange={(e) => {setDefinitions_inp(e.target.value);}}
+              style={{height: 200}}
+              spellCheck={false}
+              className='mb-2'
+            />
+
+            <Button variant='danger'>reset to dictionary</Button>
+
+          </Form>
+
+        </Card_b.Body>
+      </Card_b>
     </>
   )
 }
@@ -217,6 +285,7 @@ function VocabCard({card, word, setCard, onCardDelete} : {card: Card, word: Word
 
   return (
     <>
+      <h2>fields</h2>
       <Fields
         kanji_inp={kanji_inp}
         setKanji_inp={setKanji_inp}
@@ -226,62 +295,103 @@ function VocabCard({card, word, setCard, onCardDelete} : {card: Card, word: Word
         setReading_inp={setReading_inp}
         // saveCardToDatabase={saveCardToDatabase}
       />
-      <h3>example sentences</h3>
-        <div><b>sentence pool</b></div>
-        A random example sentence will be drawn from the following pool:
-        <div style={{border: '1px solid black', padding: '1em'}}>
-          {
-            sentencePool.map(s => {
-              return (
-                <SentenceListItem key={s.id} sentence={s} showDeleteButton={true} onDelete={() => {
-                  setSentencePool(sentencePool.filter(poolSentence => poolSentence.id != s.id))
-                }}/>
-              )
-            })
-          }
-        </div>
-      <div><b>avaliable sentences</b></div>
-      Other avaliable sentences. Click here to 
-      <Link target='_blank' to={`/word-details/?wordId=${word.id}`}> manage avaliable sentences.</Link>
-      
-      <div style={{border: '1px solid black', padding: '0.5em', marginBottom: '1em'}}>
-        filter: <input type='text' ></input> 
-      </div>
-      
-      <div style={{border: '1px solid black', padding: '1em'}}>
-        {
-          avaliableSentences.filter(s => !inSentencePool(s)).map(s => {
-            return (
-              <SentenceListItem 
-                sentence={s} 
-                extraButtons={[
-                  <button onClick={() => {
-                    setSentencePool(sentencePool.concat([s]))
-                  }}>
-                  +
-                  </button>
-                ]}
-              />
-            )
-          })
-        }
-      </div>
-      <div style={{display: 'flex', justifyContent: 'center'}}>
-        <div>
-          <button onClick={async () => {
-            let res = await saveCardToDatabase()
-            if (res) {
-              window.alert('card successfully saved')
+      <h2>example sentences (appears in <Badge bg='secondary'>back</Badge>)</h2>
+      <Card_b className='mb-3'>
+        <Card_b.Header>
+          configure example sentences for this card
+        </Card_b.Header>
+        <Card_b.Body>
+          <Card_b className='mb-2'>
+            <Card_b.Header>
+              <b>sentence pool</b>
+              <div>A random example sentence will be drawn from the following pool</div>
+            </Card_b.Header>
+            <Card_b.Body>
+              {
+                sentencePool.map(s => {
+                  return (
+                    <SentenceListItem 
+                      key={s.id} 
+                      sentence={s} 
+                      showDeleteButton={true} 
+                      onDelete={() => {
+                        setSentencePool(sentencePool.filter(poolSentence => poolSentence.id != s.id))
+                      }}
+                    />
+                  )
+                })
+              }
+            </Card_b.Body>
+          </Card_b>
+
+          <Card_b className='mb-2'>
+            <Card_b.Header>
+              <b>avaliable sentences</b>
+              <div>other avaliable sentences</div>
+            </Card_b.Header>
+            <Card_b.Body>
+              <Stack 
+                direction='horizontal'
+                gap={2}
+              >
+                <Card_b className='p-1' style={{backgroundColor: 'whitesmoke'}}>filter: </Card_b>
+                <Form.Control style={{maxWidth: '20em'}}/>
+              </Stack>
+            </Card_b.Body>
+          </Card_b>
+
+          <Card_b>
+            <Card_b.Body>
+            {
+                avaliableSentences.filter(s => !inSentencePool(s)).length > 0 ?
+                  avaliableSentences.filter(s => !inSentencePool(s)).map(s => {
+                    return (
+                      <SentenceListItem 
+                        sentence={s} 
+                        extraButtons={[
+                          <Button
+                            variant='primary'
+                            size='sm'
+                            onClick={() => {
+                              setSentencePool(sentencePool.concat([s]))
+                            }}>
+                          +
+                          </Button>
+                        ]}
+                      />
+                    )
+                  })
+                :
+                  <div>this list is empty</div>
+              }
+            </Card_b.Body>
+          </Card_b>
+        </Card_b.Body>
+      </Card_b>
+
+      <Stack direction='horizontal' className='justify-content-evenly'>
+        <Button
+          onClick={
+            async () => {
+              let res = await saveCardToDatabase()
+              if (res) {
+                window.alert('card successfully saved')
+              }
             }
-          }}>save changes</button>
-        </div>
-        <div>
-          <button>preview card</button>
-        </div>
-        <div>
-          <button style={{backgroundColor: 'pink'}} onClick={() => onCardDelete()}>delete card</button>
-        </div>
-      </div>      
+          }
+        >
+          save changes
+        </Button>
+        <Button variant='outline-primary'>
+          preview card
+        </Button>
+        <Button 
+          variant='danger'
+          onClick={() => onCardDelete()}  
+        >
+          delete card
+        </Button>
+      </Stack>
     </>
   )
 }
@@ -352,53 +462,78 @@ function SentenceCard({cardOnPageHasSentence, navToCardWithSentence, card, word,
 
   return (
     <>
-      <h3>sentence</h3>
-      <div><b>selected sentence:</b></div>
-      {
-        sentenceOnCard ?
-        <SentenceListItem sentence={sentenceOnCard}/>
-        :
-        <div>this card appears to have no sentence.</div>
-      }
-      <div><b>avaliable sentences</b></div>
-      Other avaliable sentences. Click here to 
-      <Link target='_blank' to={`/word-details/?wordId=${word.id}`}> manage avaliable sentences.</Link>
-      
-      <div style={{border: '1px solid black', padding: '0.5em', marginBottom: '1em'}}>
-        filter: <input type='text' ></input> 
-      </div>
-      
-      <div style={{border: '1px solid black', padding: '1em'}}>
-        {
-          avaliableSentences ?
-            avaliableSentences.length > 0 ?
-              avaliableSentences.filter(s => !sentenceOnCard || s.id != sentenceOnCard.id).map(s => {
-                return (
-                  <SentenceListItem 
-                    sentence={s} 
-                    extraButtons={[
-                      <button onClick={() => {
-                        if (cardOnPageHasSentence(s)) {
-                          if (window.confirm('there is already a sentence card for this word with this sentence. Go to card?')) {
-                            navToCardWithSentence(s)
-                          }
-                          return;
-                        }
-                        setSentenceOnCard(s)
-                      }}>
-                      select
-                      </button>
-                    ]}
-                  />
-                )
-              })
-            :
-            <div>no sentences found for this word</div>
-          :
-          <div>fetching...</div>
-        }
-      </div>
+      <h2>sentence (appears in <Badge bg='primary'>front</Badge>)</h2>
+      <Card_b className='mb-3'>
+        <Card_b.Header>
+          select a sentence
+        </Card_b.Header>
+        <Card_b.Body>
+          <Card_b className='mb-2'>
+            <Card_b.Header>
+              <b>selected sentence</b>
+            </Card_b.Header>
+            <Card_b.Body>
+              {
+                sentenceOnCard ?
+                <SentenceListItem sentence={sentenceOnCard}/>
+                :
+                <div>this card appears to have no sentence.</div>
+              }
+            </Card_b.Body>
+          </Card_b>
+          <Card_b className='mb-2'>
+            <Card_b.Header>
+              <b>avaliable sentences</b>
+            </Card_b.Header>
+            <Card_b.Body>
+              <Stack 
+                  direction='horizontal'
+                  gap={2}
+                >
+                <Card_b className='p-1' style={{backgroundColor: 'whitesmoke'}}>filter: </Card_b>
+                <Form.Control style={{maxWidth: '20em'}}/>
+              </Stack>
+            </Card_b.Body>
+          </Card_b>
+          <Card_b>
+            <Card_b.Body>
+              {
+                avaliableSentences ?
+                  avaliableSentences.length > 0 ?
+                    avaliableSentences.filter(s => !sentenceOnCard || s.id != sentenceOnCard.id).map(s => {
+                      return (
+                        <SentenceListItem 
+                          sentence={s}
+                          
+                          extraButtons={[
+                            <Button 
+                              variant='success'
+                              onClick={() => {
+                                if (cardOnPageHasSentence(s)) {
+                                  if (window.confirm('there is already a sentence card for this word with this sentence. Go to card?')) {
+                                    navToCardWithSentence(s)
+                                  }
+                                  return;
+                                }
+                                setSentenceOnCard(s)
+                              }}>
+                            select
+                            </Button>
+                          ]}
+                        />
+                      )
+                    })
+                  :
+                  <div>this list is empty</div>
+                :
+                <div>fetching...</div>
+              }
+            </Card_b.Body>
+          </Card_b>
+        </Card_b.Body>
+      </Card_b>
 
+      <h2>fields</h2>
       <Fields
         kanji_inp={kanji_inp}
         setKanji_inp={setKanji_inp}
@@ -407,8 +542,30 @@ function SentenceCard({cardOnPageHasSentence, navToCardWithSentence, card, word,
         reading_inp={reading_inp}
         setReading_inp={setReading_inp}
       />
-
-      <div style={{display: 'flex', justifyContent: 'center'}}>
+      <Stack direction='horizontal' className='justify-content-evenly'>
+        <Button
+          onClick={
+            async () => {
+              let res = await saveCardToDatabase()
+              if (res) {
+                window.alert('card successfully saved')
+              }
+            }
+          }
+        >
+          save changes
+        </Button>
+        <Button variant='outline-primary'>
+          preview card
+        </Button>
+        <Button 
+          variant='danger'
+          onClick={() => onCardDelete()}  
+        >
+          delete card
+        </Button>
+      </Stack>
+      {/* <div style={{display: 'flex', justifyContent: 'center'}}>
         <div>
           <button onClick={async () => {
             let res = await saveCardToDatabase()
@@ -424,7 +581,7 @@ function SentenceCard({cardOnPageHasSentence, navToCardWithSentence, card, word,
         <div>
           <button style={{backgroundColor: 'pink'}} onClick={() => onCardDelete()}>delete card</button>
         </div>
-      </div>
+      </div> */}
     </>
     
   )
@@ -436,20 +593,18 @@ function CardEditor({cardOnPageHasSentence, navToCardWithSentence, cardsOnPage, 
   {cardOnPageHasSentence: (s:ExampleSentence) => boolean, navToCardWithSentence: (s:ExampleSentence) => void, cardsOnPage: Card[], card: Card, word: Word, setCard: (newCard: Card) => void, onCardDelete: () => void}) {  
   return (
     <>
-      <div style={{padding: '1em'}}>
-        <h1>Card Editor: {card.name}</h1>
-        <div>date added: {card.dateAdded.toString()}</div>
-        <div>last reviewed: {card.lastReviewed ? card.lastReviewed.toString() : 'never'} </div>
-        <div>time due: {card.timeDue.toString()}</div>
-        <div>known level of card: {card.knownLevel}</div>
-        <div>cardId: {card.id}</div>
-        {
-          card.cardType == 'VOCAB' ? 
-            <VocabCard key={card.id} card={card} word={word} setCard={setCard} onCardDelete={onCardDelete}/>
-            :
-            <SentenceCard cardOnPageHasSentence={cardOnPageHasSentence} navToCardWithSentence={navToCardWithSentence} key={card.id} card={card} word={word} setCard={setCard} onCardDelete={onCardDelete}/>
-        }
-      </div>
+      <h1>Card Editor: {card.name}</h1>
+      <div>date added: {card.dateAdded.toString()}</div>
+      <div>last reviewed: {card.lastReviewed ? card.lastReviewed.toString() : 'never'} </div>
+      <div>time due: {card.timeDue.toString()}</div>
+      <div>known level of card: {card.knownLevel}</div>
+      <div>cardId: {card.id}</div>
+      {
+        card.cardType == 'VOCAB' ? 
+          <VocabCard key={card.id} card={card} word={word} setCard={setCard} onCardDelete={onCardDelete}/>
+          :
+          <SentenceCard cardOnPageHasSentence={cardOnPageHasSentence} navToCardWithSentence={navToCardWithSentence} key={card.id} card={card} word={word} setCard={setCard} onCardDelete={onCardDelete}/>
+      }
     </>
   )
 }
@@ -630,60 +785,105 @@ function CardsForWord() {
         word ?
           cards ?
           <>
-          <h2>cards for word: {word.kanji}</h2>
-          <div style={{border: '1px solid red', minHeight: '30vh', padding:'1em', display: 'flex'}}>
-            
-            <div style={{border: '1px solid black', padding: '0.5em', minWidth: '17em', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between'}}>
-              {/* left bar */} 
-              <div style={{width: '100%'}}>
-                {/* card list*/}
-                {
-                  cards.length > 0 ?
-                    cards.map((card, i) => {
-                      return (
-                        <div key={card.id} style={{border: '1px solid black', width: '100%', backgroundColor: cardIdx === i ? 'limegreen' : (card.cardType == 'VOCAB' ? 'whitesmoke' : 'beige')}}
-                          onClick={() => {
-                            setCardIdx(i)
-                          }}
-                        >
-                        {card.name}
-                        </div>
-                      )
-                    })
-                  :
-                    <div>No cards. Create one below.</div>    
-                }
-                {
-                  showTmp &&
-                  <div key='abcd' style={{border: '1px solid black', width: '100%', backgroundColor: 'skyblue'}}>
-                    creating...
-                  </div>
-                }
+            <Container fluid className="border border-black mb-5" style={{backgroundColor: 'lightblue'}}>
+              <h1>CARDS FOR WORD: {word.kanji}</h1>
+            </Container>
 
-              </div>
-              <div style={{border: '1px solid black', width: '100%'}}> 
-                <button style={{width: '100%'}} onClick={() => onCreateVocabCard(cards, word)}>+ new vocab card</button>
-                <button style={{width: '100%'}} onClick={onCreateSentenceCard}>+ new sentence card</button>
-              </div>
-            </div>
-            <div style={{border: '1px solid black', width: '100%'}}>
-              {
-                displayedCard ?
-                <CardEditor cardOnPageHasSentence={cardOnPageHasSentence} navToCardWithSentence={navToCardWithSentence} cardsOnPage={cards} card={displayedCard} word={word} setCard={(newCard) => {
-                  const newCards = cards.slice(0, cardIdx).concat(newCard).concat(cards.slice(cardIdx + 1))
-                  setCards(newCards)
-                  // cards[cardIdx] = newCard
-                }} onCardDelete={() => {
-                  if (window.confirm('Delete card?')) {
-                    deleteCardAtCardIdx()
-                  }
-                  
-                }} />
-                :
-                <div>select a card to display it</div>
-              }
-            </div>
-          </div>
+            <Container className='mb-5'>
+              <Card_b>
+                <Card_b.Header>
+                  <h4>card browser</h4>
+                </Card_b.Header>
+                <Card_b.Body>
+                  <Row>
+                    <Col xs='auto'>
+                      <Card_b>
+                        <Card_b.Header>
+                          <b>card select</b>
+                        </Card_b.Header>
+                        <Card_b.Body style={{minHeight: '50vh', maxHeight: '80vh', overflow: 'scroll', overflowX: 'hidden'}}>
+                          <Stack gap={1}>
+                            {
+                              cards.length > 0 ?
+                                cards.map((card, i) => {
+                                  return (
+                                    <Card_b
+                                      key={card.id}
+                                      onClick={() => setCardIdx(i)}
+                                      className='p-1'
+                                      style={{
+                                        backgroundColor: cardIdx === i ? 'limegreen' : (card.cardType == 'VOCAB' ? 'pink' : 'aliceblue')
+                                      }}
+                                    >
+                                      {card.name}
+                                    </Card_b>
+                                  )
+                                })
+                              :
+                                <div>No cards. Create one below.</div>    
+                            }
+                            {
+                              showTmp &&
+                              <Card_b 
+                                key="new"
+                                className='p-1'
+                                bg='primary'
+                                text='light'
+                                border='info'
+                                style={{
+                                  opacity: '70%'
+                                }}
+                              >
+                                <Stack direction='horizontal' gap={1}>
+                                  <Spinner animation="grow" size="sm"/>
+                                  <div>
+                                    creating...
+                                  </div>
+                                  
+                                </Stack>
+
+                              </Card_b>
+                            }
+                          </Stack>
+                        </Card_b.Body>
+                        <Card_b.Footer>
+                          <Stack gap={1}>
+                            <Button onClick={() => onCreateVocabCard(cards, word)}>+ new vocab card</Button>
+                            <Button onClick={() => onCreateSentenceCard()}>+ new sentence card</Button>
+                          </Stack>
+                        </Card_b.Footer>
+                      </Card_b>
+                    </Col>
+
+                    <Col xs>
+                      <Card_b style={{minHeight: '70vh'}}>
+                        <Card_b.Body>
+                        {
+                          displayedCard ?
+                          <CardEditor cardOnPageHasSentence={cardOnPageHasSentence} navToCardWithSentence={navToCardWithSentence} cardsOnPage={cards} card={displayedCard} word={word} setCard={(newCard) => {
+                            const newCards = cards.slice(0, cardIdx).concat(newCard).concat(cards.slice(cardIdx + 1))
+                            setCards(newCards)
+                            // cards[cardIdx] = newCard
+                          }} onCardDelete={() => {
+                            if (window.confirm('Delete card?')) {
+                              deleteCardAtCardIdx()
+                            }
+                          }} />
+                          :
+                          <div>select a card to display it</div>
+                        }
+                        </Card_b.Body>
+                      </Card_b>
+                    </Col>
+
+
+                  </Row>
+
+
+                </Card_b.Body>
+              </Card_b>
+
+            </Container>
           </>
           :
           <div>fetching cards...</div>

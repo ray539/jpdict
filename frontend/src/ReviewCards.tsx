@@ -209,7 +209,7 @@ function CardFront({card, height, onClickShowAnswer = () => {}} : {card: Card, h
  * @param onGrade: what happens user finishes grading the card
  * @returns 
  */
-function CardView({card, showFront, height = '80vh', setShowFront, onGrade = (q) => {}} : {card: Card, showFront: boolean, height?: string, setShowFront: (v:boolean) => void, onGrade?: (q: number) => void}) {
+export function CardView({card, showFront, height = '80vh', setShowFront, onGrade = (q) => {}} : {card: Card, showFront: boolean, height?: string, setShowFront: (v:boolean) => void, onGrade?: (q: number) => void}) {
   // const cardView = pageState.cards![pageState.cIndx!];
   return (
     showFront ?

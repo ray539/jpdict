@@ -11,8 +11,8 @@ import { log } from "node:console";
 import { useImmer } from "use-immer";
 import { SentenceListItem } from "./WordDetails";
 import { A } from "./A";
-import { knownLevelDelayTime } from "./ReviewCards";
-import { Badge, Button, Card as Card_b, Col, Container, Row, Spinner, Stack } from "react-bootstrap";
+import { CardView, knownLevelDelayTime } from "./ReviewCards";
+import { Badge, Button, Card as Card_b, Col, Container, Modal, Row, Spinner, Stack, Tab, Tabs } from "react-bootstrap";
 
 async function fetchSentences(acct: Account, word: Word) {
   // get example sentence on card and add it if it exists
@@ -225,6 +225,29 @@ function Fields({kanji_inp, setKanji_inp, reading_inp, setReading_inp, definitio
   )
 }
 
+function ControlledCardView({card} : {card: Card}) {
+  const [showFront, setShowFront] = useState(true)
+
+  return (
+    <>
+      <Tabs
+        activeKey={showFront ? 'front' : 'back'}
+        onSelect={(k) => k == 'front' ? setShowFront(true) : setShowFront(false)}
+        className='mb-3'
+      >
+        <Tab eventKey='front' title='front' />
+        <Tab eventKey='back' title='back' />
+      </Tabs>
+      <CardView 
+        card={card}
+        showFront={showFront}
+        setShowFront={setShowFront}
+        height='50vh'
+      />
+    </>
+  )
+}
+
 function VocabCard({card, word, setCard, onCardDelete} : {card: Card, word: Word, setCard: (newCard: Card) => void, onCardDelete: () => void}) {
   const authContext = useContext(AuthContext);
   const acct = authContext.account!
@@ -283,8 +306,23 @@ function VocabCard({card, word, setCard, onCardDelete} : {card: Card, word: Word
     onMount()
   }, [])
 
+  const [showModal, setShowModal] = useState(false);
+
   return (
     <>
+      <Modal
+        show={showModal}
+        size='xl'
+        onHide={() => setShowModal(false)}
+      >
+        <Modal.Header closeButton>
+          <h1>preview card</h1>
+        </Modal.Header>
+        <Modal.Body>
+          <ControlledCardView card={card}/>
+        </Modal.Body>
+      </Modal>
+
       <h2>fields</h2>
       <Fields
         kanji_inp={kanji_inp}
@@ -382,7 +420,10 @@ function VocabCard({card, word, setCard, onCardDelete} : {card: Card, word: Word
         >
           save changes
         </Button>
-        <Button variant='outline-primary'>
+        <Button 
+          variant='outline-primary'
+          onClick={() => setShowModal(true)}
+        >
           preview card
         </Button>
         <Button 
@@ -459,9 +500,22 @@ function SentenceCard({cardOnPageHasSentence, navToCardWithSentence, card, word,
     onMount()
   }, [])
 
+  const [showModal, setShowModal] = useState(false);
 
   return (
     <>
+      <Modal
+        show={showModal}
+        size='xl'
+        onHide={() => setShowModal(false)}
+      >
+        <Modal.Header closeButton>
+          <h1>preview card</h1>
+        </Modal.Header>
+        <Modal.Body>
+          <ControlledCardView card={card}/>
+        </Modal.Body>
+      </Modal>
       <h2>sentence (appears in <Badge bg='primary'>front</Badge>)</h2>
       <Card_b className='mb-3'>
         <Card_b.Header>
@@ -555,7 +609,10 @@ function SentenceCard({cardOnPageHasSentence, navToCardWithSentence, card, word,
         >
           save changes
         </Button>
-        <Button variant='outline-primary'>
+        <Button 
+          variant='outline-primary'
+          onClick={() => setShowModal(true)}
+        >
           preview card
         </Button>
         <Button 

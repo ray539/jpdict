@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "./context/AuthContextProvider";
 import { useParams, useSearchParams } from "react-router-dom";
-import { Form, Modal } from "react-bootstrap";
+import { Card, Container, Form, Modal } from "react-bootstrap";
 import { addWordsToDeck, getTDeckListForUser, wordIdsToWords } from "./service/requestHelper";
 import { SearchResult, TDeckInfo, Word } from "../../global";
 import { WordListItem } from "./Search";
@@ -60,23 +60,27 @@ function AddWordsToDeck() {
 
   return (
     <>
-      <h1>add words to deck</h1>
-      <div style={{border: '1px solid red', minHeight: '30vh', padding:'1em'}}>
-        {
-          wordIdsParam ?
-            words ?
-            <>
-              <h2>select a deck</h2>
-              <Form.Select
-                value={selectedDeckInfo ? selectedDeckInfo.id : ''}
-                onChange={(e) => {
-                  if (!deckInfos) return;
-                  setSelectedDeckInfo(deckInfos.find(info => info.id == e.target.value))
-                  
-                }}
-              >
-                {
-                  deckInfos ?
+      <Container fluid className="border border-black mb-5" style={{backgroundColor: 'lightblue'}}>
+        <h1>ADD WORDS</h1>
+      </Container>
+      <Container>
+        <Card>
+          <Card.Header>
+            <h3>add words to deck</h3>
+          </Card.Header>
+          <Card.Body>
+            <h4>select a deck</h4>
+            <Form.Select
+              value={selectedDeckInfo ? selectedDeckInfo.id : ''}
+              onChange={(e) => {
+                if (!deckInfos) return;
+                setSelectedDeckInfo(deckInfos.find(info => info.id == e.target.value))
+                
+              }}
+              className='mb-3'
+            >
+              {
+                deckInfos ?
                   deckInfos.map(deckInfo => {
                     return (
                       <option
@@ -87,46 +91,52 @@ function AddWordsToDeck() {
                       </option>
                     )
                   })
-                  :
-                  <option>fetching...</option>
-                }
-              </Form.Select>
-              <div>total words: {selectedDeckInfo ? selectedDeckInfo.totalWords : 'NA'}</div>
-              <div>known words: {selectedDeckInfo ? selectedDeckInfo.knownWords : 'NA'}</div>
-              <h2>adding the following word(s)</h2>
-              {
-                words.map(word => {
-                  return (
-                    <WordListItem
-                      key={word.id}
-                      word={word}
-                    />
-                  )
-                })
+                :
+                <option>fetching...</option>
               }
-              <div style={{display: 'flex', justifyContent: 'center', marginTop: '1em'}}>
-                <button
-                  onClick={async () => {
-                    if (!selectedDeckInfo) {
-                      return;
-                    }
-                    const wordIds = words.map(w => w.id);
-                    const cnt = await addWordsToDeck(acct.username, acct.password, selectedDeckInfo.id, wordIds);
-                    if ('error' in cnt) {
-                      window.alert(cnt.error);
-                      return;
-                    }
-                    window.alert(`you just added ${cnt.count} entries to the deck '${selectedDeckInfo.name}'. ${wordIds.length - cnt.count} entries were not added due to being duplicates.`)
-                  }}
-                >submit</button>
-              </div>
-            </>
-            :
-            <div>fetching words...</div>
-          :
-          <div>wordIds is missing</div>
-        }
-      </div>
+            </Form.Select>
+
+            <Card className='mb-3'>
+              <Card.Header>
+                <b>confirm deck info</b>
+              </Card.Header>
+              <Card.Body>
+                <div>name: {selectedDeckInfo ? selectedDeckInfo.name : 'NA'}</div>
+                <div>total words: {selectedDeckInfo ? selectedDeckInfo.totalWords : 'NA'}</div>
+                <div>known words: {selectedDeckInfo ? selectedDeckInfo.knownWords : 'NA'}</div>
+              </Card.Body>
+            </Card>
+            
+
+            
+            <h4>adding the following words: </h4>
+            <Card>
+              <Card.Body>
+                {
+                  wordIdsParam ?
+                    words ?
+                      words.map(word => {
+                        return (
+                          <WordListItem
+                            key={word.id}
+                            word={word}
+                          />
+                        )
+                      })
+                    :
+                    <div>fetching...</div>
+                  :
+                  <div>wordsId is missing</div>
+                }
+              </Card.Body>
+            </Card>
+            
+
+
+
+          </Card.Body>
+        </Card>
+      </Container>
     </>
   )
 }

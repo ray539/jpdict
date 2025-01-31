@@ -171,7 +171,7 @@ export function SearchBar({searchBarInput, setSearchBarInput, onSearch} : {searc
               </Card>
               
               <Form.Control 
-                style={{maxWidth: '30em'}}
+                style={{maxWidth: '20em'}}
                 value={searchBarInput} onChange={(e) => setSearchBarInput(e.target.value)}
               />
 

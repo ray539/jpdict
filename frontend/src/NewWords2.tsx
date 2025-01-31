@@ -1,11 +1,11 @@
-import React, { createContext, ReactElement, useContext, useEffect, useState } from "react";
+import React, { createContext, ReactElement, ReactNode, useContext, useEffect, useState } from "react";
 import { AuthContext } from "./context/AuthContextProvider";
 import { changeWordKnownLevel, getNewWordsList, getTDeckListForUser, getWordsInDeck, searchDictionary, updateNewWordsList } from "./service/requestHelper";
 import { TimeContext } from "./context/TimeContextProvider";
 import { knownLevelToColorDescription, SearchResult, TDeckInfo, Word } from "../../global";
 import { Navigate, Route, Routes, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { WordView } from "./WordDetails";
-import { Button, Card, Col, Container, Form, Modal, Row, Stack } from "react-bootstrap";
+import { Button, Card, Col, Container, Form, Modal, Row, Stack, Tab, Tabs } from "react-bootstrap";
 import { DeckInfoAndPageChange } from "./BrowseDeck";
 import { SearchBar, WordListItem } from "./Search";
 
@@ -36,35 +36,39 @@ function SpecificDeck({deckInfo, words, setWords} : {deckInfo : TDeckInfo, words
 
   return (
     <>
+      <Card className='mb-3'>
+        <Card.Body>
+          {
+            deckWords ?
+              deckWords.map(w => {
+                return (
+                  <WordListItem 
+                    word={w}
+                    extraButtons={
+                      [
+                        <div>{inWords(w) ? '📝' : ''}</div>,
+                        <Button
+                        
+                          variant={inWords(w) ? 'danger' : 'primary'}
+                          onClick={() => {
+                            inWords(w) ? setWords(words.filter(word => word.id != w.id)) : setWords(words.concat(w))
+                          }}>
+                        {inWords(w) ? 'remove' : 'add'}
+                        </Button>,
+                        
+                      ]
+                    }
+                />
+                )
+              })
+            :
+            <div>fetching...</div>
+          }
+        </Card.Body>
+      </Card>
       <DeckInfoAndPageChange deckInfo={deckInfo} pageIdx={pageIdx} setPageIdx={setPageIdx}/>
-      {
-        deckWords ?
-          deckWords.map(w => {
-            return (
-              <WordListItem 
-                word={w}
-                extraButtons={
-                  [
-                    <div>{inWords(w) ? '📝' : ''}</div>,
-                    <button 
-                      style={{
-                        backgroundColor: inWords(w) ? 'pink' : 'lightblue',
-                        marginLeft: '1em'
-                      }} 
-                      onClick={() => {
-                        inWords(w) ? setWords(words.filter(word => word.id != w.id)) : setWords(words.concat(w))
-                      }}>
-                    {inWords(w) ? 'remove' : 'add'}
-                    </button>,
-                    
-                  ]
-                }
-            />
-            )
-          })
-        :
-          <div>fetching...</div>
-      }
+      
+
     </>
   )
 }
@@ -82,7 +86,7 @@ function AddFromDeck({words, setWords} : {words: Word[], setWords: (v:Word[]) =>
       return;
     }    
     setDeckInfos(fetchedDeckInfos)
-    setSelectedDeckInfo(fetchedDeckInfos[0])
+    setSelectedDeckInfo(fetchedDeckInfos[0]) // TODO: change this
   }
   useEffect(() => {
     fetchDeckList()
@@ -90,26 +94,32 @@ function AddFromDeck({words, setWords} : {words: Word[], setWords: (v:Word[]) =>
   
 
   return (
-    <div style={{border: '1px solid black', minHeight: '30vh', padding: '0.5em'}}>
-      <h3>select deck</h3>
-      <Form.Select
-      >
-        {
-          deckInfos ?
-          deckInfos.map(deckInfo => {
-            return (
-              <option 
-                key={deckInfo.id}
-                value={deckInfo.id}
-              >
-                {deckInfo.name}
-              </option>
-            )
-          })
-          :
-          <option>fetching...</option>
-        }
-      </Form.Select>
+    <div style={{minHeight: '30vh'}}>
+      <Card className='mb-3'>
+        <Card.Header>
+          select a deck
+        </Card.Header>
+        <Card.Body>
+          <Form.Select>
+            {
+              deckInfos ?
+              deckInfos.map(deckInfo => {
+                return (
+                  <option 
+                    key={deckInfo.id}
+                    value={deckInfo.id}
+                  >
+                    {deckInfo.name}
+                  </option>
+                )
+              })
+              :
+              <option>fetching...</option>
+            }
+          </Form.Select>
+        </Card.Body>
+      </Card>
+      
       {
         selectedDeckInfo ?
         <SpecificDeck deckInfo={selectedDeckInfo} words={words} setWords={setWords} />
@@ -155,41 +165,43 @@ function AddFromDictionary({words, setWords} : {words: Word[], setWords: (v:Word
   const inWords = (w: Word) => words.find(word => word.id == w.id) != undefined;
 
   return (
-    <div style={{border: '1px solid black', minHeight: '30vh', padding: '0.5em'}}>
-      <h3>search dictionary</h3>
+    <div style={{minHeight: '30vh'}}>
       <SearchBar 
         searchBarInput={searchBarInput}
         setSearchBarInput={setSearchBarInput}
         onSearch={onSearch}
       />
-      {
-        wordInfos ?
-          wordInfos.length > 0 ?
-          wordInfos.map((wi, i) => 
-            <WordListItem 
-              word={wi.word} 
-              extraButtons={
-                [
-                  <div>{inWords(wi.word) ? '📝' : ''}</div>,
-                  <button 
-                    style={{
-                      backgroundColor: inWords(wi.word) ? 'pink' : 'lightblue',
-                      marginLeft: '1em'
-                    }} 
-                    onClick={() => {
-                      inWords(wi.word) ? setWords(words.filter(word => word.id != wi.word.id)) : setWords(words.concat(wi.word))
-                    }}>
-                  {inWords(wi.word) ? 'remove' : 'add'}
-                  </button>
-                ]
-              }
-            />
-          )
-          :
-          <div>no results found</div>
-        :
-          <div> enter some search terms and press the blue search button</div>
-      }
+      <Card>
+        <Card.Body>
+          {
+          wordInfos ?
+            wordInfos.length > 0 ?
+              wordInfos.map((wi, i) => 
+                <WordListItem 
+                  word={wi.word} 
+                  extraButtons={
+                    [
+                      <div>{inWords(wi.word) ? '📝' : ''}</div>,
+                      <Button
+                        variant={inWords(wi.word) ? 'danger' : 'primary'}
+                        onClick={() => {
+                          inWords(wi.word) ? setWords(words.filter(word => word.id != wi.word.id)) : setWords(words.concat(wi.word))
+                        }}>
+                      {inWords(wi.word) ? 'remove' : 'add'}
+                      </Button>,
+                      
+                    ] 
+                  }
+                />
+              )
+              :
+                <div>no results found</div>
+            :
+              <div> enter some search terms and press the blue search button</div>
+          }
+        </Card.Body>
+      </Card>
+      
     </div>
   )
 }
@@ -199,25 +211,28 @@ function EditWordList_({words, setWords} : {words: Word[], setWords: (v:Word[]) 
   console.log('here');
   console.log(option);
   const navigate = useNavigate()
+  const [key, setKey] = useState(option!)
+
   return (
     <>
-      <button
-        style={{backgroundColor: option == 'from-deck' ? 'limegreen' : ''}}
-        onClick={() => navigate('/new-words2/edit/from-deck')}
-      >add from deck</button>
-      <button 
-        style={{backgroundColor: option == 'from-dictionary' ? 'limegreen' : ''}}
-        onClick={() => navigate('/new-words2/edit/from-dictionary')}
-      >add from dictionary</button>
       {
-        option == 'from-deck' ?
-          <AddFromDeck words={words} setWords={setWords}/>
+        ['from-deck', 'from-dictionary'].includes(option!) ?
+          <Tabs
+            activeKey={key}
+            onSelect={(k) => setKey(k!)}
+            className='mb-3'
+          >
+            <Tab eventKey='from-deck' title='deck'>
+              <AddFromDeck words={words} setWords={setWords}/>
+            </Tab>
+            <Tab eventKey='from-dictionary' title='dictionary'>
+              <AddFromDictionary words={words} setWords={setWords}/>
+            </Tab>
+          </Tabs>
         :
-          option == 'from-dictionary' ?
-            <AddFromDictionary words={words} setWords={setWords}/>
-          :
-            <div>invalid word source. Try clicking a button above</div>
+          <div>invalid source. Close this window and open it again.</div>
       }
+
     </>
 
   )
@@ -234,6 +249,8 @@ function EditWordList({currentWordList, setCurrentWordList}:{currentWordList: Wo
 
   const change = words && currentWordList && JSON.stringify(words.map(w => w.id).sort()) != JSON.stringify(currentWordList.map(w => w.id).sort())
 
+
+  const [key, setKey] = useState('a')
 
   return (
     <Modal 
@@ -254,15 +271,80 @@ function EditWordList({currentWordList, setCurrentWordList}:{currentWordList: Wo
       <Modal.Header closeButton>
         <h1>edit word list</h1>
       </Modal.Header>
-      <div style={{border: '1px solid red', minHeight: '70vh', padding: '0.5em'}}>
-        <h2>avaliable words</h2>
-        <Routes>
-          <Route path=":option/*" element={<EditWordList_ words={words} setWords={setWords}/>} />
-          <Route path="*" element={<div>url doesn't contain a source</div>}/>
-        </Routes>
-        
 
-        <h2>current list</h2>
+      <Modal.Body>
+        <Row>
+          <Col xs className=''>
+            <Card>
+              <Card.Header>
+                <h4>word source</h4>
+              </Card.Header>
+              <Card.Body>
+                <Routes>
+                  <Route path=":option/*" element={<EditWordList_ words={words} setWords={setWords}/>} />
+                  <Route path="*" element={<div>url doesn't contain a source. Close and open this window again.</div>}/>
+                </Routes>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col xs='auto' className=''>
+            <Card>
+              <Card.Header>
+                <h4>word list</h4>
+                <b>markings: </b>
+                <div>✔: known word</div>
+                <div>🎯: daily word</div>
+              </Card.Header>
+              <Card.Body style={{maxHeight: '70vh', overflowX:'hidden', overflowY: 'scroll'}}>
+                <Stack gap={1}>
+                  {
+                    words.length > 0 ?
+                      words.map((word, i) => {
+                        return (
+                          <WordListItemSmall 
+                            number={(i + 1)}
+                            word={word}
+                            extraButtons={[
+                              <Button
+                                size='sm'
+                                variant='danger'
+                                onClick={() => {
+                                  setWords(words.filter(w => w.id != word.id))
+                                }}
+                              >
+                                remove
+                              </Button>
+                            ]}
+                          />
+                        )
+                      })
+                    :
+                    <div>this list is empty</div>
+                  }
+                </Stack>
+              </Card.Body>
+              <Card.Footer>
+                <Button
+                  className='w-100'
+                  onClick={async () => {
+                    const res = await updateNewWordsList(acct.username, acct.password, words.map(w => w.id));
+                    if ('error' in res) {
+                      window.alert('couldn\'t update new words list')
+                      return;
+                    }
+                    setCurrentWordList(structuredClone(words))
+                    window.alert('word list updated successfully')
+                  }}
+                >
+                  save changes
+                </Button>
+              </Card.Footer>
+            </Card>
+          </Col>
+        </Row>
+
+
+        {/* <h2>current list</h2>
         <div style={{border: '1px solid black', padding: '0.5em', marginBottom: '1em', display: 'flex', flexWrap: 'wrap'}}>
           {
             words.length > 0 ?
@@ -305,9 +387,41 @@ function EditWordList({currentWordList, setCurrentWordList}:{currentWordList: Wo
             }}
           >save
           </button>
-        </div>
-      </div>
+        </div> */}
+
+      </Modal.Body>
     </Modal>
+  )
+}
+
+function WordListItemSmall({word, number, green=false, onClick= () => {}, extraButtons = []} : {word: Word, number: number, green?: boolean, onClick?: () => void, extraButtons?: ReactNode[]}) {
+
+  return (
+    <Card 
+      key={word.id} 
+      style={
+        {
+          width: '100%', 
+          backgroundColor: green ? 'limegreen' : 'whitesmoke', 
+        }
+      }
+      onClick={onClick}
+    >
+      <Card.Header>
+      <Stack direction="horizontal" gap={2}>
+        <Card className='ps-1 pe-1 fs-5' style={{color: 'white', backgroundColor: knownLevelToColorDescription(word.knownLevel).kanjiColor}}>
+          {number}
+        </Card>
+        <Card className='fs-4'>
+          {word.kanji}
+          {
+            word.knownLevel != undefined ? '✔' : ''
+          } 
+        </Card>
+        {extraButtons}
+      </Stack>
+      </Card.Header>
+    </Card>
   )
 }
 
@@ -389,30 +503,13 @@ function NewWords2() {
                         words.length > 0 ?
                           words.map((word, i) => {
                             return (
-                              <Card 
-                                key={word.id} 
-                                style={
-                                  {
-                                    width: '100%', 
-                                    backgroundColor: wordIdx === i ? 'limegreen' : 'whitesmoke', 
-                                  }
-                                }
+                              <WordListItemSmall 
+                                key={word.id}
+                                number={i + 1}
+                                word={word}
+                                green={wordIdx == i}
                                 onClick={() => setWordIdx(i)}
-                              >
-                                <Card.Header>
-                                <Stack direction="horizontal" gap={2}>
-                                  <Card className='ps-1 pe-1 fs-5' style={{color: 'white', backgroundColor: knownLevelToColorDescription(word.knownLevel).kanjiColor}}>
-                                    {i + 1}
-                                  </Card>
-                                  <Card className='fs-4'>
-                                    {word.kanji}
-                                    {
-                                      word.knownLevel != undefined ? '✔' : ''
-                                    } 
-                                  </Card>
-                                </Stack>
-                                </Card.Header>
-                              </Card>
+                              />
                             )
 
                           })
@@ -478,10 +575,6 @@ function NewWords2() {
         </Card.Body>
       </Card>
     </Container>
-
-    
-    
-
     </>
   )
 }

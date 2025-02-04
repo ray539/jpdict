@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { ReactNode, useContext, useEffect, useRef, useState } from "react";
 import { AuthContext } from "./context/AuthContextProvider";
 import { Link, useNavigate } from "react-router-dom";
 import { TDeckInfo } from "../../global";
@@ -27,7 +27,6 @@ function Dashboard() {
   }, [])
 
   const [deckNameInp, setDeckNameInp] = useState('');
-
   return (
     <>
       <Container fluid className="border border-black" style={{backgroundColor: 'lightblue'}}>
@@ -52,7 +51,7 @@ function Dashboard() {
           <Button variant="outline-primary" className="fs-4"
             href="/new-words2?wordIdx=0"
           >
-            learn new words
+            view daily words
           </Button>
         </Col>
         <Col className="text-center mb-5">
@@ -118,10 +117,20 @@ function Dashboard() {
             >
               <Form.Label className='fw-bold'>deck name</Form.Label>
               <Form.Control value={deckNameInp} onChange={(e) => setDeckNameInp(e.target.value)} className='mb-3'/>
-              <Button type='submit'>
+              {/* <Button type='submit'>
                 submit
-              </Button>
-
+              </Button> */}
+              <button
+                style={{
+                  padding: '5px 10px 5px 10px',
+                  border: '0',
+                  borderRadius: '4px',
+                  textAlign: 'center',
+                  boxShadow: '0 3px lightgray',
+                }}
+              >
+                Submit
+              </button>
             </Form>
           </Card.Body>
         </Card>

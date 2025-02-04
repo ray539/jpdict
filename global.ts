@@ -84,6 +84,15 @@ export interface Card {
   dateAdded: Date;
 }
 
+export interface CardUpdateQuery {
+  cardData?: CardData
+  dateAdded?: Date
+  knownLevel?: number
+  easeFactor?: number
+  lastReviewed?: Date
+  timeDue?: Date
+}
+
 export interface SearchResult {
   word: Word,
   matchLvl: number

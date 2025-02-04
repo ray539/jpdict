@@ -1009,6 +1009,37 @@ app.put('/api/updateCard', async(req, res) => {
   return res.json(createdCard)
 })
 
+app.put('/api/updateCards', async(req, res) => {
+  const username = req.headers.username as string
+  const password = req.headers.password as string;
+  const foundAccnt = await loginAccount(username, password)
+  if (!foundAccnt) {
+    return res.status(403).json({error: 'invalid credentials'})
+  }
+  const cardIds = req.body.cardIds;
+  const newCard = req.body.newCard;
+
+  await prisma.card.updateMany({
+    where: {
+      accountId: foundAccnt.id,
+      id: {
+        in: cardIds
+      }
+    },
+    data: {
+      cardData: newCard.cardData,
+      dateAdded: newCard.dateAdded,
+      knownLevel: newCard.knownLevel,
+      easeFactor: newCard.easeFactor,
+      lastReviewed: newCard.lastReviewed,
+      timeDue: newCard.timeDue,
+    }
+  })
+
+  res.json({msg: 'OK'})
+
+})
+
 app.delete('/api/deleteCard', async(req, res) => {
   const username = req.headers.username as string
   const password = req.headers.password as string;
@@ -1050,9 +1081,6 @@ app.get('/api/getDueCards', async(req, res) => {
 
 
 
-// 
-
-
 app.get('/api/searchDictionary', async(req, res) => {
   const username = req.headers.username as string;
   const password = req.headers.password as string;
@@ -1074,6 +1102,82 @@ app.get('/api/searchDictionary', async(req, res) => {
   res.json(searchRes)
 })
 
+/**
+ * returns a bunch of word objects similar to wordId provided
+ */
+app.get('/api/getWordsSimilarToWord', async(req, res) => {
+  const username = req.headers.username as string;
+  const password = req.headers.password as string;
+  const foundAccnt = await loginAccount(username, password)
+  if (!foundAccnt) {
+    return res.status(403).json({error: 'invalid credentials'})
+  }
+
+  const wordId = req.query.wordId as string;
+  const tmp = await prisma.similarWord.findMany({
+    where: {
+      accountId: foundAccnt.id,
+      OR: [
+        {
+          word1Id: wordId,
+        },
+        {
+          word2Id: wordId
+        }
+      ]
+    }
+  })
+  const wordIds = tmp.map(obj => {
+    return obj.word1Id == wordId ? obj.word2Id : obj.word1Id
+  });
+  const ret = await wordIdsToWords(wordIds, foundAccnt);
+  res.json(ret);
+})
+
+app.post('/api/updateWordsSimilarToWord', async(req, res) => {
+  const username = req.headers.username as string;
+  const password = req.headers.password as string;
+  const foundAccnt = await loginAccount(username, password)
+  console.log('here');
+  console.log(username);
+  console.log(password);
+  
+  if (!foundAccnt) {
+    return res.status(403).json({error: 'invalid credentials'})
+  }
+
+  const wordId = req.body.wordId as string;
+  const newSimWordIds_ = req.body.newSimWordIds as string[];
+  // make sure newSimWordIds doesn't include wordId
+  const newSimWordIds = newSimWordIds_.filter(x => x != wordId)
+  console.log(wordId);
+  console.log(newSimWordIds);
+  
+  await prisma.similarWord.deleteMany({
+    where: {
+      accountId: foundAccnt.id,
+      OR: [
+        {
+          word1Id: wordId
+        },
+        {
+          word2Id: wordId
+        }
+      ]
+    }
+  })
+  const toCreate = newSimWordIds.map(wId => {
+    return wordId < wId ?
+      {accountId: foundAccnt.id, word1Id: wordId, word2Id: wId}
+    :
+      {accountId: foundAccnt.id, word1Id: wId, word2Id: wordId}
+  })
+
+  await prisma.similarWord.createMany({
+    data: toCreate
+  })
+  res.json({msg: 'OK'})
+})
 
 const PORT = process.env.PORT || 3004
 app.listen(PORT, () => {

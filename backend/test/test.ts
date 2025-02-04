@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import axios, { AxiosResponse } from 'axios'
-import { addCustomSentenceForWord, addWordsToDeck, changeWordKnownLevel, createDeck, deleteCustomSentenceForWord, deleteWordFromDeck, getCard, getCardsForWord, getCustomSentencesForWord, getDeckInfo, getDueCards, getExampleSentencesForWord, getNewWordsList, getTDeckListForUser, getWord, getWordKnownLevel, getWordsInDeck, register, searchDictionary, setBaseUrl, wordIdsToWords  } from '../../frontend/src/service/requestHelper'
+import { addCustomSentenceForWord, addWordsToDeck, changeWordKnownLevel, createDeck, deleteCustomSentenceForWord, deleteWordFromDeck, getCard, getCardsForWord, getCustomSentencesForWord, getDeckInfo, getDueCards, getExampleSentencesForWord, getNewWordsList, getTDeckListForUser, getWord, getWordKnownLevel, getWordsInDeck, getWordsSimilarToWord, register, searchDictionary, setBaseUrl, updateWordsSimilarToWord, wordIdsToWords  } from '../../frontend/src/service/requestHelper'
 import { log } from "console";
 
 const prisma = new PrismaClient();
@@ -320,12 +320,55 @@ async function addWordsToDeck_1() {
   console.log(ret);
 }
 
+async function getWordsSimilarToWord_1() {
+  await reset();
+  const deckInfos = await getTDeckListForUser('a', 'b');
+  if ('error' in deckInfos) {
+    console.log('failed');
+    return;
+  }
+  const deck = deckInfos[0];
+  const words = await getWordsInDeck('a', 'b', deck.id, 0, 10);
+  if ('error' in words) {
+    console.log('failed');
+    return;
+  }
+  console.log('WORDS: ');
+  console.log(words);
+
+  // make word0 similar to word1, word2 ... word9
+  const x = await updateWordsSimilarToWord('a', 'b', words[0].id, words.slice(1).map(w => w.id))
+  if ('error' in x) {
+    console.log('failed');
+    return;
+  }
+  // get words similar to words[i] for i == 0 .. 9
+  for (let i = 0; i < 10; i++) {
+    const ret = await getWordsSimilarToWord('a', 'b', words[i].id)
+    console.log(`words similar to words[${i}]:`);
+    console.log(ret);
+  }
+
+  // make word0 similar to nothing
+  const y = await updateWordsSimilarToWord('a', 'b', words[0].id, [])
+  if ('error' in y) {
+    console.log('failed');
+    return;
+  }
+  // get words similar to words[i] for i == 0 .. 9
+  for (let i = 0; i < 10; i++) {
+    const ret = await getWordsSimilarToWord('a', 'b', words[i].id)
+    console.log(`words similar to words[${i}]:`);
+    console.log(ret);
+  }
+}
+
 async function deleteAllCards() {
   await prisma.card.deleteMany()
 }
 
 async function main() {
-  await reset()
+  await getWordsSimilarToWord_1()
 }
 
 main()

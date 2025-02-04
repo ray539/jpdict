@@ -6,6 +6,8 @@ import { EditText, EditTextarea } from "react-edit-text"
 import 'react-edit-text/dist/index.css'
 import { useParams } from "react-router-dom";
 
+
+
 // export interface ExampleSentence {
 //   id: string;
 //   jpn: string;
@@ -193,6 +195,7 @@ function CardCreation() {
 
 export function A() {
   const authContext = useContext(AuthContext);
+
   return (
     authContext.account ?
     <CardCreation />

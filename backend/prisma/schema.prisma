@@ -136,6 +136,8 @@ model SimilarWord {
   word2 Word @relation(name: "word2", fields: [word2Id], references: [id])
   word2Id String
 
+
+
   @@id([accountId, word1Id, word2Id])
 }
 
@@ -159,7 +161,9 @@ model Card {
   knownLevel Int // always at least zero. 0, 1, 2, 3, ... 7
   easeFactor Float
   cardType CardType
-  name String @unique // unique name for each card, auto generated
+  name String @unique 
+  @@unique([accountId, name]) 
+  // for a given account, all cards have unique name
 
   lastReviewed DateTime?
   timeDue DateTime

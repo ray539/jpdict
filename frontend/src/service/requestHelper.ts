@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios'
-import {Account, Card, CardType, ExampleSentence, SearchResult, TDeckInfo, Word} from '../../../global'
+import {Account, Card, CardType, CardUpdateQuery, ExampleSentence, SearchResult, TDeckInfo, Word} from '../../../global'
 let BASEURL = ''
 
 /**
@@ -465,6 +465,27 @@ export async function updateCard(username: string, password: string, cardId: str
   }
 }
 
+export async function updateCards(username: string, password: string, cardIds: string[], newCard: CardUpdateQuery) {
+  try {
+    const res = await axios.put(`${BASEURL}/api/updateCards`, 
+      {
+        cardIds: cardIds,
+        newCard: newCard
+      },
+      {
+        headers: {
+          username: username,
+          password: password
+        }
+      }
+    );
+  } catch (e) {
+    return extractError(e)
+  }
+}
+
+
+
 export async function deleteCard(username: string, password: string, cardId: string) {
   try {
     const res = await axios.delete(`${BASEURL}/api/deleteCard`, {
@@ -563,6 +584,45 @@ export async function searchDictionary(username: string, password: string, query
     const ret = res.data as SearchResult[] 
     return ret;
   } catch (e) {
+    return extractError(e)
+  }
+}
+
+export async function getWordsSimilarToWord(username: string, password: string, wordId: string) {
+  try {
+    const res = await axios.get(`${BASEURL}/api/getWordsSimilarToWord`, {
+      headers: {
+        username: username,
+        password: password
+      },
+      params: {
+        wordId: wordId
+      }
+    })
+    return res.data as Word[]
+  } catch (e) {
+    return extractError(e)
+  }
+}
+
+export async function updateWordsSimilarToWord(username: string, password: string, wordId: string, newSimWordIds: string[]) {
+  try {
+    const res = await axios.post(`${BASEURL}/api/updateWordsSimilarToWord`, 
+      {
+        wordId: wordId,
+        newSimWordIds: newSimWordIds
+      },
+      {
+        headers: 
+        {
+          username: username,
+          password: password
+        },
+    })
+    return res.data
+  } catch (e) {
+    console.log(e);
+    
     return extractError(e)
   }
 }

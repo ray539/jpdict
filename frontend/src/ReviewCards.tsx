@@ -1,12 +1,13 @@
 import { useContext, useEffect, useState } from "react"
-import { Card, ExampleSentence, getRandomIntInclusive } from "../../global"
-import { changeWordKnownLevel, getCardsForWord, getDueCards, updateCard } from "./service/requestHelper"
+import { Card, ExampleSentence, getRandomIntInclusive, SearchResult, Word } from "../../global"
+import { changeWordKnownLevel, getCardsForWord, getDueCards, getWordsSimilarToWord, searchDictionary, updateCard, updateCards, updateWordsSimilarToWord } from "./service/requestHelper"
 import { AuthContext } from "./context/AuthContextProvider"
 import { Updater, useImmer } from "use-immer"
 import { useNavigate } from "react-router-dom"
 import { TimeContext } from "./context/TimeContextProvider"
 import { SentenceListItem } from "./WordDetails"
-import { Container, Card as Card_b, Stack, Button } from "react-bootstrap"
+import { Container, Card as Card_b, Stack, Button, Modal, Col, Row } from "react-bootstrap"
+import { SearchBar, WordListItem } from "./Search"
 
 const CARD: Card = {
   "id": "0d6a8aca-88bc-462a-a9b6-47172bc37fad",
@@ -87,14 +88,213 @@ function SentenceDisplay({sentence, jpnOnly = false} : {sentence: ExampleSentenc
   )
 }
 
-function CardBack({card, height, onGrade = (q) => {}} : {card: Card, height: string, onGrade?: (q: number) => void}) {
+const NUM_WORDS_PER_PAGE = 10
+export function SimilarWordBrowser({currWordId, similarWords, setAndSaveSimilarWords, onClickSimilarWord = () => {}} : {currWordId: string, similarWords: Word[], setAndSaveSimilarWords: (v: Word[]) => Promise<void>, onClickSimilarWord?: (v: string) => void}) {
   const authContext = useContext(AuthContext);
-  const timeContext = useContext(TimeContext)
   const acct = authContext.account!;
+  const [wordsTmp, setWordsTmp] = useState<Word[]>(similarWords);
+
+  const [searchBarInput, setSearchBarInput] = useState<string>('');
+  const [searchStr, setSearchStr] = useState('');
+  const [pageIdx, setPageIdx] = useState(0);
+  const [wordInfos, setWordInfos] = useState<SearchResult[]>();
+
+  async function onSearch() {
+    if (searchBarInput.length < 2 || searchBarInput.replace(/\s+/, '').length < 2) {
+      window.alert('please edit your search string')
+      return;
+    }
+    setSearchStr(searchBarInput);
+    setPageIdx(0);
+  }
+
+  async function fetchAndSetWordInfos() {
+    if (!searchStr) return;
+    const fetchedWordInfos = await searchDictionary(acct.username, acct.password, searchStr, pageIdx * NUM_WORDS_PER_PAGE, NUM_WORDS_PER_PAGE);
+    if ('error' in fetchedWordInfos) {
+      window.alert('couldn\'t search')
+      return;
+    }
+    setWordInfos(fetchedWordInfos)
+  }
+
+
+  useEffect(() => {
+    fetchAndSetWordInfos()
+  }, [searchStr, pageIdx])
+
+  const inWords = (w: Word) => wordsTmp.find(word => word.id == w.id) != undefined;
+
+  return (
+    <>
+      <Row>
+        <Col xs>
+          <Card_b>
+            <Card_b.Body>
+              <SearchBar 
+                searchBarInput={searchBarInput} 
+                setSearchBarInput={setSearchBarInput}
+                onSearch={onSearch}
+              />
+
+              <Card_b className='mb-3'>
+                <Card_b.Body>
+                  {
+                  wordInfos ?
+                    wordInfos.length > 0 ?
+                      wordInfos.map((wi, i) => 
+                        <WordListItem
+                          word={wi.word}
+                          extraButtons={
+                            [
+                              <div>{inWords(wi.word) ? '📝' : ''}</div>,
+                              <Button
+                                disabled={wi.word.id == currWordId}
+                                variant={inWords(wi.word) ? 'danger' : 'primary'}
+                                onClick={() => {
+                                  if (inWords(wi.word)) {
+                                    setWordsTmp(wordsTmp.filter(word => word.id != wi.word.id))
+                                  } else {
+                                    setWordsTmp(wordsTmp.concat(wi.word))
+                                  }
+                                }}>
+                              {inWords(wi.word) ? 'remove' : 'add'}
+                              </Button>,
+                            ]
+                          }
+                        />
+                      )
+                      :
+                        <div>no results found</div>
+                    :
+                      <div> enter some search terms and press the blue search button</div>
+                  }
+                </Card_b.Body>
+              </Card_b>
+            </Card_b.Body>
+          </Card_b>
+        </Col>
+        <Col xs='auto'>
+          <Card_b>
+            <Card_b.Header>
+              <b>words I confuse</b><br></br>
+              <b>this word with</b><br></br>
+              <b>(top 3 show on card)</b>
+            </Card_b.Header>
+            <Card_b.Body style={{minHeight: '50vh', maxHeight: '70vh', overflowY: 'scroll', overflowX: 'hidden'}}>
+              <Stack direction='vertical' gap={1}>
+                {
+                  wordsTmp.length > 0 ?
+                    wordsTmp.map((wordTmp, i) => {
+                      return (
+                        <Card_b 
+                          className='p-1 fs-4' 
+                          style={{
+                            backgroundColor: i < 3 ? 'pink' : 'whitesmoke',
+                            border: i < 3 ? '1px solid red' : ''
+                          }}
+                        >
+                          <Stack direction='horizontal' gap={1}>
+                            {wordTmp.kanji}
+                            <Button
+                              variant='danger'
+                              size='sm'
+                              onClick={() => {
+                                setWordsTmp(wordsTmp.filter(w => w.id != wordTmp.id))
+                              }}
+                            >
+                              remove
+                            </Button>
+                            {
+                              i < 3 && <div></div>
+                            }
+
+                          </Stack>
+                          
+                        </Card_b>
+                      )
+                    })
+                  :
+                    <div>this list is empty</div>
+                }
+              </Stack>
+            </Card_b.Body>
+            <Card_b.Footer>
+              <Button 
+                className='w-100'
+                onClick={() => {
+                  setAndSaveSimilarWords(wordsTmp)
+                }}
+              >
+                save changles
+              </Button>
+            </Card_b.Footer>
+          </Card_b>
+        </Col>
+      </Row>
+    </>
+  )
+}
+
+function CardBack({card, height, onGrade = () => {}, onClickSimilarWord = () => {}} : {card: Card, height: string, onGrade?: (q: number) => void, onClickSimilarWord?: (wordId: string) => void}) {
+  const authContext = useContext(AuthContext);
+  const acct = authContext.account!;
+
+  const [similarWords, setSimilarWords] = useState<Word[]>();
+  
+  async function setAndSaveSimilarWords(newWords: Word[]) {
+    const ret = await updateWordsSimilarToWord(acct.username, acct.password, card.wordId, newWords.map(w => w.id))
+    if ('error' in ret) {
+      window.alert('couldn\'t save')
+      return;
+    }
+    setSimilarWords(structuredClone(newWords));
+    window.alert('saved successfully')
+  }
+
+  const [showModal, setShowModal] = useState(false);
+
+  async function fetchAndSetSimilarWords() {
+    const fetchedSimilarWords = await getWordsSimilarToWord(acct.username, acct.password, card.wordId);
+    if ('error' in fetchedSimilarWords) {
+      window.alert('couldn\'t fetch similar words')
+      return;
+    }
+    setSimilarWords(fetchedSimilarWords)
+  }
+  
+
+  useEffect(() => {
+    fetchAndSetSimilarWords()
+  }, []);
 
   // const height = '80vh'
   return (
     <>
+      <Modal
+        show={showModal}
+        size='xl'
+        onHide={() => setShowModal(false)}
+      >
+        <Modal.Header>
+          <h1>confused with... search for word</h1>
+        </Modal.Header>
+        <Modal.Body>
+          {
+            similarWords ?
+              <SimilarWordBrowser
+                currWordId={card.wordId}
+                similarWords={similarWords}
+                setAndSaveSimilarWords={setAndSaveSimilarWords}
+                onClickSimilarWord={onClickSimilarWord}
+              />
+            :
+              <div>fetching...</div>
+          }
+
+        </Modal.Body>
+      </Modal>
+      
       <Card_b className='shadow'>
         <Card_b.Body>
           <div className='text-center' style={{minHeight: height, display: 'flex', flexDirection: 'column', justifyContent: 'space-between'}}>
@@ -132,34 +332,69 @@ function CardBack({card, height, onGrade = (q) => {}} : {card: Card, height: str
               </div>
             </div>
 
-            <div style={{display: 'flex', justifyContent: 'center', marginBottom: `calc(0.1 * ${height})`}}>
-              <Button
-                variant='danger'
-                onClick={() => onGrade(0)}
-                className='me-2'
-              >
-                fail
-              </Button>
-              <Button
-                variant='secondary'
-                onClick={() => onGrade(1)}
-                className='me-2'
-              >
-                difficult (but pass)
-              </Button>
-              <Button
-                variant='success'
-                onClick={() => onGrade(2)}
-                className='me-2'
-              >
-                pass
-              </Button>
-              <Button
-                variant='primary'
-                onClick={() => onGrade(3)}
-              >
-                easy
-              </Button>
+            <div>
+              <div style={{display: 'flex', justifyContent: 'center'}} className='mb-1'>
+                {
+                  similarWords ?
+                    similarWords.slice(0, 3).map(w => {
+                      return (
+                        <Button
+                          variant='danger'
+                          onClick={() => onClickSimilarWord(w.id)}
+                          className='me-2'
+                        >
+                          <Stack
+                            direction='horizontal'
+                            gap={2}
+                          >
+                            <div>confused with </div>
+                            <Card_b style={{backgroundColor: 'whitesmoke'}} className='p-1 fs-4'>
+                              <ruby>{w.kanji}<rt>{w.reading}</rt></ruby>
+                            </Card_b>
+                          </Stack>
+                        </Button>
+                      )
+                    })
+                  :
+                    <div className='me-2'>fetching...</div>
+                }
+              </div>
+              <div style={{display: 'flex', justifyContent: 'center', marginBottom: `calc(0.1 * ${height})`}}>
+                <Button
+                  variant='danger'
+                  className='me-2'
+                  onClick={() => setShowModal(true)}
+                >
+                  confused with 🔎
+                </Button>
+                <Button
+                  variant='danger'
+                  onClick={() => onGrade(0)}
+                  className='me-2'
+                >
+                  fail
+                </Button>
+                <Button
+                  variant='secondary'
+                  onClick={() => onGrade(1)}
+                  className='me-2'
+                >
+                  difficult (but pass)
+                </Button>
+                <Button
+                  variant='success'
+                  onClick={() => onGrade(2)}
+                  className='me-2'
+                >
+                  pass
+                </Button>
+                <Button
+                  variant='primary'
+                  onClick={() => onGrade(3)}
+                >
+                  easy
+                </Button>
+              </div>
             </div>
           </div>
         </Card_b.Body>
@@ -178,11 +413,14 @@ function CardFront({card, height, onClickShowAnswer = () => {}} : {card: Card, h
         <Card_b.Body>
           <div className='text-center' style={{minHeight: height, display: 'flex', flexDirection: 'column', justifyContent: 'space-between'}}>
             <div>
-              <h1 style={{fontSize: `calc(0.1 * ${height})`, marginTop: `calc(0.1 * ${height})`}}>{card.cardData.kanji}</h1>
-              {
-                card.cardType == 'SENTENCE' &&
-                <SentenceDisplay sentence={card.cardData.exampleSentences[0]} jpnOnly/>
-              }
+              <div style={{marginTop: `calc(0.1 * ${height})`}}>
+                <h1 style={{fontSize: `calc(0.1 * ${height})`, }}>{card.cardData.kanji}</h1>
+                {
+                  card.cardType == 'SENTENCE' &&
+                  <SentenceDisplay sentence={card.cardData.exampleSentences[0]} jpnOnly/>
+                }
+              </div>
+
             </div>
             <div>
               <Button
@@ -209,13 +447,13 @@ function CardFront({card, height, onClickShowAnswer = () => {}} : {card: Card, h
  * @param onGrade: what happens user finishes grading the card
  * @returns 
  */
-export function CardView({card, showFront, height = '80vh', setShowFront, onGrade = (q) => {}} : {card: Card, showFront: boolean, height?: string, setShowFront: (v:boolean) => void, onGrade?: (q: number) => void}) {
+export function CardView({card, showFront, height = '80vh', setShowFront, onGrade = (q) => {}, onClickSimilarWord = () => {}} : {card: Card, showFront: boolean, height?: string, setShowFront: (v:boolean) => void, onGrade?: (q: number) => void, onClickSimilarWord?: (wordId: string) => void}) {
   // const cardView = pageState.cards![pageState.cIndx!];
   return (
     showFront ?
       <CardFront card={card} height={height} onClickShowAnswer={() => setShowFront(false)}/>
     :
-      <CardBack card={card}  height={height} onGrade={onGrade} />
+      <CardBack card={card}  height={height} onGrade={onGrade} onClickSimilarWord={onClickSimilarWord} />
   )
 }
 
@@ -270,6 +508,31 @@ export function ReviewCards() {
   // q == 1: difficult pass
   // q == 2: pass
   // q == 3: easy pass
+
+  async function onClickSimilarWord(wordId: string, otherWordId: string) {
+    // get all cards with word attatched to 'wordId' or 'otherWordId'
+    // set known level to zero for all of them
+    // ofc, also update the known time
+    // but don't edit any ease factors
+
+    const fetchedCards1 = await getCardsForWord(acct.username, acct.password, wordId);
+    if ('error' in fetchedCards1) {
+      window.alert('gay')
+      return;
+    }
+    const fetchedCards2 = await getCardsForWord(acct.username, acct.password, otherWordId);
+    if ('error' in fetchedCards2) {
+      window.alert('gay2')
+      return
+    }
+    const allCardIds = fetchedCards1.concat(fetchedCards2).map(w => w.id);
+    await updateCards(acct.username, acct.password, allCardIds, {
+      knownLevel: 0,
+      lastReviewed: new Date(timeContext.getCurrentTimestamp()),
+      timeDue: new Date(timeContext.getCurrentTimestamp() + knownLevelDelayTime(0, 2.5))
+    })
+    setCardIdx(cardIdx! + 1)
+  }
 
   async function onGradeCard(card: Card, q: number) {
     let d = (0.1 - (3 - q) * (0.08 + (3 - q) * 0.02))
@@ -414,6 +677,7 @@ export function ReviewCards() {
                     })}
                     showFront={cardViews[cardIdx].front}
                     onGrade={(q) => onGradeCard(cardViews[cardIdx].card, q)}
+                    onClickSimilarWord={(other) => onClickSimilarWord(cardViews[cardIdx].card.wordId, other)}
                     height='70vh'
                   />
                 </Card_b.Body>

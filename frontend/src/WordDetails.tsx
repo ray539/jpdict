@@ -2,8 +2,9 @@ import { ReactNode, useContext, useEffect, useState } from "react";
 import { AuthContext } from "./context/AuthContextProvider";
 import { Link, useSearchParams } from "react-router-dom";
 import { checkSentenceInput, ExampleSentence, knownLevelToColorDescription, Word } from "../../global";
-import { addCustomSentenceForWord, deleteCustomSentenceForWord, getCustomSentencesForWord, getExampleSentencesForWord, getWord } from "./service/requestHelper";
-import { Button, Card, Col, Container, Form, Stack } from "react-bootstrap";
+import { addCustomSentenceForWord, deleteCustomSentenceForWord, getCustomSentencesForWord, getExampleSentencesForWord, getWord, getWordsSimilarToWord, updateWordsSimilarToWord } from "./service/requestHelper";
+import { Button, Card, Col, Container, Form, Modal, Stack } from "react-bootstrap";
+import { SimilarWordBrowser } from "./ReviewCards";
 
 
 export function SentenceListItem({sentence, showDeleteButton = false, onDelete, extraButtons = []}: {sentence: ExampleSentence, showDeleteButton?: boolean, onDelete?: Function, extraButtons?: ReactNode[]}) {
@@ -47,6 +48,27 @@ export function WordView({word, otherButtons} :  {word: Word, otherButtons?: Rea
   const [jpn_input, setJpn_input] = useState('');
   const [eng_inp, setEng_input] = useState('');
 
+  const [similarWords, setSimilarWords] = useState<Word[]>();
+
+  async function fetchAndSetSimilarWords() {
+    const fetchedSimilarWords = await getWordsSimilarToWord(acct.username, acct.password, word.id);
+    if ('error' in fetchedSimilarWords) {
+      window.alert('couldn\'t fetch similar words')
+      return;
+    }
+    setSimilarWords(fetchedSimilarWords)
+  }
+  
+  async function setAndSaveSimilarWords(newWords: Word[]) {
+    const ret = await updateWordsSimilarToWord(acct.username, acct.password, word.id, newWords.map(w => w.id))
+    if ('error' in ret) {
+      window.alert('couldn\'t save')
+      return;
+    }
+    setSimilarWords(structuredClone(newWords));
+    window.alert('saved successfully')
+  }
+
   let allPositions: string[] = [];
   let kanjiColor = '';
   let def = '';
@@ -76,10 +98,35 @@ export function WordView({word, otherButtons} :  {word: Word, otherButtons?: Rea
 
   useEffect(() => {
     fetchAndSetSentences()
+    fetchAndSetSimilarWords()
   }, [])
+
+  const [showModal, setShowModal] = useState(false)
 
   return (
       <>
+        <Modal
+          show={showModal}
+          size='xl'
+          onHide={() => setShowModal(false)}
+        >
+          <Modal.Header>
+            <h1>often confused with: search for word</h1>
+          </Modal.Header>
+          <Modal.Body>
+            {
+              similarWords ?
+                <SimilarWordBrowser
+                  currWordId={word.id}
+                  similarWords={similarWords}
+                  setAndSaveSimilarWords={setAndSaveSimilarWords}
+                />
+              :
+                <div>fetching...</div>
+            }
+
+          </Modal.Body>
+        </Modal>
           {
             <>
               <h1 style={{fontSize: 50}}><ruby>{word.kanji}<rt>{word.reading}</rt></ruby> </h1>
@@ -92,6 +139,32 @@ export function WordView({word, otherButtons} :  {word: Word, otherButtons?: Rea
                 ''
               }
               <div>id: {word.id}</div>
+              <br></br>
+              <Stack direction='horizontal' gap={2}>
+                <Card className='p-1' style={{backgroundColor: 'whitesmoke'}}>
+                  <b>I often confuse this word with: </b>
+                </Card>
+                {
+                  similarWords ?
+                    similarWords.length > 0 &&
+                      similarWords.map(w => {
+                        return (
+                          <Card className='p-1 fs-4'>
+                            <ruby>{w.kanji}<rt>{w.reading}</rt></ruby>
+                          </Card>
+                        )
+                      })
+                  :
+                  <div>fetching...</div>
+                }
+                <Button
+                  size='sm'
+                  onClick={() => setShowModal(true)}
+                >✎</Button>
+              </Stack>
+
+
+              
               <br></br>
               <h2>definitions:</h2>
               <ul>

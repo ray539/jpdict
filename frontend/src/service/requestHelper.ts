@@ -626,3 +626,62 @@ export async function updateWordsSimilarToWord(username: string, password: strin
     return extractError(e)
   }
 }
+
+export async function setWordsToAdd(username: string, password: string, newWordsToAdd: string[]) {
+  try {
+    const res = await axios.post(`${BASEURL}/api/setWordsToAdd`, 
+      {
+        newWordsToAdd: newWordsToAdd
+      },
+      {
+        headers: 
+        {
+          username: username,
+          password: password
+        },
+    })
+    return res.data
+  } catch (e) {
+    console.log(e);
+    
+    return extractError(e)
+  }
+}
+
+export async function getWordsToAdd(username: string, password: string) {
+  try {
+    const res = await axios.get(`${BASEURL}/api/getWordsToAdd`, 
+      {
+        headers: 
+        {
+          username: username,
+          password: password
+        },
+    })
+    return res.data as Word[]
+  } catch (e) {
+    console.log(e);
+    return extractError(e)
+  }
+}
+
+export async function extractFromTextAndSetWordsToAdd(username: string, password: string, text: string) {
+  try {
+    const res = await axios.post(`${BASEURL}/api/extractFromTextAndSetWordsToAdd`, 
+      {
+        text: text
+      },
+      {
+        headers: 
+        {
+          username: username,
+          password: password
+        },
+    })
+    return res.data
+  } catch (e) {
+    console.log(e);
+    
+    return extractError(e)
+  }
+}

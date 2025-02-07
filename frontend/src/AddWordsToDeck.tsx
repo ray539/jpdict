@@ -1,8 +1,8 @@
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "./context/AuthContextProvider";
 import { useParams, useSearchParams } from "react-router-dom";
-import { Card, Container, Form, Modal } from "react-bootstrap";
-import { addWordsToDeck, getTDeckListForUser, wordIdsToWords } from "./service/requestHelper";
+import { Button, Card, Container, Form, Modal } from "react-bootstrap";
+import { addWordsToDeck, getTDeckListForUser, getWordsToAdd, setWordsToAdd, wordIdsToWords } from "./service/requestHelper";
 import { SearchResult, TDeckInfo, Word } from "../../global";
 import { WordListItem } from "./Search";
 
@@ -10,9 +10,7 @@ function AddWordsToDeck() {
   const authContext = useContext(AuthContext);
   const acct = authContext.account!
 
-  const [searchParams, setSearchParams] = useSearchParams();
-  const wordIdsParam = searchParams.get('wordIds');
-
+  // const [searchParams, setSearchParams] = useSearchParams();
   // const [wordIds, setWordIds] = useState<string[]>()
   const [words, setWords] = useState<Word[]>();
   
@@ -30,13 +28,14 @@ function AddWordsToDeck() {
   }
 
   async function fetchWords() {
-    if (!wordIdsParam) {
-      return;
-    }
-    console.log(wordIdsParam);
+    // if (!wordIdsParam) {
+    //   return;
+    // }
+    // console.log(wordIdsParam);
     try {
-      const wordIds = JSON.parse(wordIdsParam) as string[]
-      const fetchedWords = await wordIdsToWords(acct.username, acct.password, wordIds);
+      // const wordIds = JSON.parse(wordIdsParam) as string[]
+      // const fetchedWords = await wordIdsToWords(acct.username, acct.password, wordIds);
+      const fetchedWords = await getWordsToAdd(acct.username, acct.password);
       if ('error' in fetchedWords) {
         window.alert(fetchedWords.error)
         return;
@@ -52,11 +51,7 @@ function AddWordsToDeck() {
     fetchDeckList()
     fetchWords()
   }, [])
-
-  // useEffect(() => {
-
-
-  // }, [])
+  
 
   return (
     <>
@@ -110,32 +105,54 @@ function AddWordsToDeck() {
 
             
             <h4>adding the following words: </h4>
-            <Card>
+            <Card className='mb-3'>
               <Card.Body>
                 {
-                  wordIdsParam ?
-                    words ?
-                      words.map(word => {
-                        return (
-                          <WordListItem
-                            key={word.id}
-                            word={word}
-                          />
-                        )
-                      })
-                    :
-                    <div>fetching...</div>
+                  words ?
+                    words.map(word => {
+                      return (
+                        <WordListItem
+                          key={word.id}
+                          word={word}
+                        />
+                      )
+                    })
                   :
-                  <div>wordsId is missing</div>
+                  <div>fetching...</div>
                 }
               </Card.Body>
             </Card>
-            
+            <div style={{display: 'flex', justifyContent: 'center'}}>
+              {
+                words ?
+                  <Button
+                  onClick={async () => {
+                    // TODO: change this so that it adds the words from the database
+                    if (!selectedDeckInfo) {
+                      return;
+                    }
+                    const wordIds = words!.map(w => w.id);
+                    const cnt = await addWordsToDeck(acct.username, acct.password, selectedDeckInfo.id, wordIds);
+                    if ('error' in cnt) {
+                      window.alert(cnt.error);
+                      return;
+                    }
+                    const ret = await setWordsToAdd(acct.username, acct.password, []);
+                    window.alert(`you just added ${cnt.count} entries to the deck '${selectedDeckInfo.name}'. ${wordIds.length - cnt.count} entries were not added due to being duplicates.`)
+                    window.location.reload()
+                  }}
+                
+                >
+                  confirm
+                </Button>
+              :
+                <div>fetching..</div>
+              }
 
-
-
+            </div>
           </Card.Body>
         </Card>
+
       </Container>
     </>
   )

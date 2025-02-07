@@ -2,8 +2,8 @@ import React, { ReactNode, useContext, useEffect, useRef, useState } from "react
 import { AuthContext } from "./context/AuthContextProvider";
 import { Link, Navigate, Routes, useNavigate, useSearchParams } from "react-router-dom";
 import { knownLevelToColorDescription, SearchResult, Word } from "../../global";
-import { searchDictionary } from "./service/requestHelper";
-import { Accordion, AccordionContext, Badge, Button, Card, Col, Container, Dropdown, Form, Modal, Row, Stack, useAccordionButton } from "react-bootstrap";
+import { searchDictionary, setWordsToAdd } from "./service/requestHelper";
+import { Accordion, AccordionContext, Badge, Button, Card, Col, Container, Dropdown, Form, FormCheck, Modal, Row, Stack, useAccordionButton } from "react-bootstrap";
 
 interface Option {
   label: string,
@@ -31,8 +31,9 @@ function CustomToggle({eventKey}: {eventKey: string}) {
   )
 }
 
-export function WordListItem({word, extraButtons} : {word: Word, extraButtons?: ReactNode[]}) {
-
+export function WordListItem({word, extraButtons, selected = false, setSelected = () => {}} : {word: Word, extraButtons?: ReactNode[], selected?: boolean, setSelected?: (v: boolean) => void}) {
+  const authContext = useContext(AuthContext);
+  const acct = authContext.account!
   const [showDetails, setShowDetails] = useState(false)
   // const [showOptions, setShowOptions] = useState(false)
   const elementRef = useRef<HTMLDivElement | null>(null)
@@ -55,7 +56,8 @@ export function WordListItem({word, extraButtons} : {word: Word, extraButtons?: 
         view cards
       </Dropdown.Item>
       <Dropdown.Item
-        onClick={() => {
+        onClick={async () => {
+          await setWordsToAdd(acct.username, acct.password, [word.id])
           window.open(`/add-words-to-deck?wordIds=["${word.id}"]`, '_blank')
         }}
       >add to deck...</Dropdown.Item>
@@ -88,8 +90,15 @@ export function WordListItem({word, extraButtons} : {word: Word, extraButtons?: 
               </div>
 
               {extraButtons}
+
               <CustomToggle eventKey={String(word.seqNum)}></CustomToggle>
               {dropDown}
+
+              <Form.Check
+                className='fs-5'
+                checked={selected}
+                onChange={(e) => setSelected(!selected)}
+              />
             </Stack>
           </Card.Header>
           <Accordion.Collapse eventKey={String(word.seqNum)}>
@@ -109,42 +118,6 @@ export function WordListItem({word, extraButtons} : {word: Word, extraButtons?: 
           </Accordion.Collapse>
         </Card>
       </Accordion>
-      {/* <div ref={elementRef} style={{border: '1px solid black', padding: '0.5em', color: kanjiColor, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative'}}>
-        <div style={{display: 'flex'}}>
-          {word.seqNum != null ? <div style={{border: '1px solid black', padding: '0.1em'}}> {word.seqNum}</div> : ''}
-          <div style={{border: '1px solid black', fontSize: '20px', marginLeft: '1em', backgroundColor: 'whitesmoke', color: kanjiColor}}>
-            {word.kanji}
-          </div>
-          <div style={{marginLeft: '1em'}}>
-            {def}
-          </div>
-        </div>
-        <div style={{display: 'flex', alignItems: 'center'}}>
-          {extraButtons}
-          <button style={{marginLeft: '1em'}} onClick={() => setShowDetails(!showDetails)}>details: {showDetails ? '▲' : '▼'}</button>
-
-        </div>
-
-
-      </div> */}
-      {/* {
-        showDetails ? 
-          <div style={{border: '1px solid black', padding: '0.5em'}}>
-            {word.reading}
-            {
-              <ul>
-                {
-                  word.definitions.map(def => {
-                    return <li>{def.glosses.join('; ')}</li>
-                  })
-                }
-              </ul>
-            }
-            <button style={{marginLeft: '1em'}} onClick={() => {window.open(`/word-details/?wordId=${word.id}`)}}>more details</button>
-          </div>
-        :
-          ''
-      } */}
     </>
   )
 }

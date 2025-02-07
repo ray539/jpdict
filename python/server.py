@@ -19,6 +19,7 @@ app = Flask(__name__)
 @app.post('/api/get_words_in_text/')
 def get_words_in_text():
   text = request.get_data(as_text=True)
+  print(text)
   tagger = MeCab.Tagger('')
   output: str = tagger.parse(text)
   output: list[str] = output.splitlines()
@@ -44,6 +45,7 @@ def get_words_in_text():
       'reading': r,
       'kanji': f
     })
+  print(wordInfos)
   return {
     'wordInfos': wordInfos
   }

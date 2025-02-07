@@ -6,7 +6,7 @@ import { knownLevelToColorDescription, SearchResult, TDeckInfo, Word } from "../
 import { Navigate, Route, Routes, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { WordView } from "./WordDetails";
 import { Button, Card, Col, Container, Form, Modal, Row, Stack, Tab, Tabs } from "react-bootstrap";
-import { DeckInfoAndPageChange } from "./BrowseDeck";
+import { DeckInfoAndPageChange, PageBrowser } from "./BrowseDeck";
 import { SearchBar, WordListItem } from "./Search";
 
 
@@ -33,6 +33,9 @@ function SpecificDeck({deckInfo, words, setWords} : {deckInfo : TDeckInfo, words
   }, [pageIdx])
 
   const inWords = (w: Word) => words.find(word => word.id == w.id) != undefined;
+
+  const NUMPAGES = Math.floor(deckInfo.totalWords / WORDS_PER_PAGE)
+  const N = 5;
 
   return (
     <>
@@ -66,7 +69,7 @@ function SpecificDeck({deckInfo, words, setWords} : {deckInfo : TDeckInfo, words
           }
         </Card.Body>
       </Card>
-      <DeckInfoAndPageChange deckInfo={deckInfo} pageIdx={pageIdx} setPageIdx={setPageIdx}/>
+      <PageBrowser numDisplay={N} numPages={NUMPAGES} pageIdx={pageIdx} setPageIdx={setPageIdx}/>
       
 
     </>

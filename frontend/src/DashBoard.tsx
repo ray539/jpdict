@@ -111,6 +111,10 @@ function Dashboard() {
             <Form
               onSubmit={async (e) => {
                 e.preventDefault();
+                if (deckNameInp.length == 0) {
+                  window.alert('deck name can\'t be empty')
+                  return;
+                }
                 await createDeck(acct.username, acct.password, deckNameInp, [])
                 fetchAndSetDeckList()
               }}

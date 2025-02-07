@@ -7,6 +7,7 @@ import { Account, Card } from '../global';
 import { log } from 'console';
 import { equal } from 'assert';
 import { searchDictionary } from './search';
+import axios from 'axios';
 const prisma = new PrismaClient();
 const app = express()
 app.use(morgan('short'))
@@ -1178,6 +1179,107 @@ app.post('/api/updateWordsSimilarToWord', async(req, res) => {
   })
   res.json({msg: 'OK'})
 })
+
+
+interface WordsToAddT {
+  [key: string]: string[] | undefined
+}
+// each user has a 'wordsToAdd' list
+// this is set each time the 'extract', 'add words to deck' functions are used
+const wordsToAdd: WordsToAddT = {}
+
+app.post('/api/setWordsToAdd', async(req, res) => {
+  const username = req.headers.username as string;
+  const password = req.headers.password as string;
+  const foundAccnt = await loginAccount(username, password)
+  if (!foundAccnt) {
+    return res.status(403).json({error: 'invalid credentials'})
+  }
+  const newWordsToAdd = req.body.newWordsToAdd;
+  wordsToAdd[foundAccnt.id] = newWordsToAdd
+  return res.json({msg: 'OK'})
+})
+
+app.get('/api/getWordsToAdd', async(req, res) => {
+  const username = req.headers.username as string;
+  const password = req.headers.password as string;
+  const foundAccnt = await loginAccount(username, password)
+  if (!foundAccnt) {
+    return res.status(403).json({error: 'invalid credentials'})
+  }
+  const ids = wordsToAdd[foundAccnt.id]
+  if (ids == undefined) {
+    return res.status(404).json({error: 'couldn\'t find words to add'})
+  }
+  const ret = await wordIdsToWords(ids, foundAccnt)
+  return res.json(ret)
+})
+
+app.post('/api/extractFromTextAndSetWordsToAdd', async(req, res) => {
+  const username = req.headers.username as string;
+  const password = req.headers.password as string;
+  const foundAccnt = await loginAccount(username, password)
+  if (!foundAccnt) {
+    return res.status(403).json({error: 'invalid credentials'})
+  }
+  const text = req.body.text as string;
+  // for every word w in the dictionary, check if w is a substring of 'text'
+  let foundWordIdsS: Set<string> = new Set();
+  const allWords = await prisma.word.findMany();
+  for (let w of allWords) {
+    if (text.includes(w.kanji)) {
+      foundWordIdsS.add(w.id)
+    }
+  }
+  if (foundWordIdsS.size == 0) {
+    return res.status(403).json({error: 'couldn\'t find any words'})
+  }
+
+  // extract more words using 'mecab'
+  const ret = await axios.post('http://localhost:5000/api/get_words_in_text/', text)
+
+  interface WordInfo {
+    kanji: string,
+    reading: string
+  }
+
+  const wordInfos = ret.data.wordInfos as WordInfo[]; // bound the length in the form input
+  // for every 'wordInfo'
+  // - grab the word which matches the kanji
+  // - if none exist, grab the first word which matches the reading
+  // let foundWords: any[] = []
+  await prisma.$transaction(async (tx) => {
+    for (let wi of wordInfos) {
+      let fnd1 = await tx.word.findFirst({
+        where: {
+          kanji: wi.kanji
+        }
+      })
+      if (fnd1 != null) {
+        foundWordIdsS.add(fnd1.id)
+        continue;
+      }
+      let fnd2 = await tx.word.findFirst({
+        where: {
+          reading: wi.reading // TODO: add a katakana reading field so its consistent
+        }
+      })
+      if (fnd2 != null) {
+        foundWordIdsS.add(fnd2.id)
+      }
+    }
+  })
+
+  if (foundWordIdsS.size == 0) {
+    return res.status(403).json({error: 'couldn\'t find any words'})
+  }
+
+  let foundWordIds = Array.from(foundWordIdsS)
+  wordsToAdd[foundAccnt.id] = foundWordIds
+  return res.json({msg: 'OK'})
+})
+
+
 
 const PORT = process.env.PORT || 3004
 app.listen(PORT, () => {

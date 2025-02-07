@@ -16,6 +16,7 @@ import { CardsForWord_ } from './CardsForWord';
 import { NewWords2_ } from './NewWords2';
 import { AddsWordsToDeck_ } from './AddWordsToDeck';
 import { Button, Col, Container, Nav, Navbar, NavDropdown, Row, Stack } from 'react-bootstrap';
+import { WordsFromText_ } from './WordsFromText';
 // DEBUG
 // import { increment_days, increment_hours, now_ } from './stubDate';
 
@@ -225,6 +226,7 @@ function App() {
               <Route path="/word-details/*" element={<WordDetails_ />} />
               <Route path="/cards-for-word/*" element={<CardsForWord_ />}/>
               <Route path="/add-words-to-deck/*" element={<AddsWordsToDeck_/>}></Route>
+              <Route path="/extract-words/*" element={<WordsFromText_ />}></Route>
               <Route path="/a/:wordId" element={<A/>} />
               <Route path="*" element={<div>App.tsx: page not found</div>}/>
             </Routes>

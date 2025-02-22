@@ -1,5 +1,6 @@
-# jpdict (dev)
+# jpdict (development in progress)
 Renshuu (or formally jpdict) is a japanese dictionary browser and flash card creator. The project aims to be a SRS flashcard review system specialized for japanese. The features and review structure was designed carefully, by reviewing many other free online japanese learning resources of similar style, and combining their features based on the owner's preferences. 
+
 **Features**:
 - Manage vocabulary decks.
 - Extract words from natural text to create / add to a deck.
@@ -13,7 +14,7 @@ Renshuu (or formally jpdict) is a japanese dictionary browser and flash card cre
     - JMDict: https://www.edrdg.org/jmdict/j_jmdict.html
 - Japanese text extractor:
     - Mecab: https://taku910.github.io/mecab/, with it's python3 wrapper https://pypi.org/project/mecab-python3/
-- This project is heavily inspired by kanshudo (https://www.kanshudo.com/) and jpdb (jpdb.io)
+- This project is heavily inspired by kanshudo (https://www.kanshudo.com/) and jpdb (https://jpdb.io)
 
 # screenshots
 deck browser:

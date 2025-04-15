@@ -1,5 +1,5 @@
 # jpdict (development in progress)
-Renshuu (or formally jpdict) is a japanese dictionary browser and flash card creator. The project aims to be a SRS flashcard review system specialized for japanese. The features and review structure was designed carefully, by reviewing many other free online japanese learning resources of similar style, and combining their features based on the owner's preferences. 
+Jpdict is a japanese dictionary browser and flash card creator. The project aims to be a SRS flashcard review system specialized for japanese. The features and review structure was designed carefully, by reviewing many other free online japanese learning resources of similar style, and combining their features based on the owner's preferences. 
 
 **Features**:
 - Manage vocabulary decks.
